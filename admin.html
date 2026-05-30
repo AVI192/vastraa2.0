@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Approve Sellers | VASTAAR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Raleway:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="account-page">
+
+<header class="header header-simple">
+  <div class="header-main">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text-wrap">
+        <div class="logo-name">VASTAAR</div>
+        <div class="logo-tagline">Admin Panel</div>
+      </div>
+    </a>
+    <a href="index.html" class="back-home"><i class="fa fa-arrow-left"></i> Shop</a>
+  </div>
+</header>
+
+<main class="account-layout admin-layout">
+  <div class="account-content" style="grid-column: 1 / -1; max-width: 900px; margin: 0 auto;">
+    <div class="account-head">
+      <h1><i class="fa fa-shield-halved"></i> Seller Approvals</h1>
+      <p>Manage sellers in <strong>MongoDB</strong> (no localStorage).</p>
+    </div>
+
+    <div class="admin-info-box">
+      <strong>Admin login:</strong> <code>admin@vastaar.com</code> / <code>admin123</code> (set in <code>backend/.env</code>)<br>
+      Data is stored in MongoDB collections: <code>users</code>, <code>products</code>, <code>carts</code>.
+    </div>
+
+    <div id="adminGate" class="settings-section">
+      <h2 class="settings-section-title">Admin Login</h2>
+      <form id="adminLoginForm" class="settings-form" style="max-width: 400px;">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="adminEmail" value="admin@vastaar.com" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="adminPass" value="admin123" required />
+        </div>
+        <button type="submit" class="btn-auth">Enter Admin Panel</button>
+      </form>
+    </div>
+
+    <div id="adminPanel" class="hidden">
+      <div class="info-card">
+        <div class="info-card-head">
+          <h2>Pending Sellers <span class="count-badge" id="pendingCount">0</span></h2>
+          <button type="button" class="btn-outline-sm" id="refreshBtn"><i class="fa fa-rotate"></i> Refresh</button>
+        </div>
+        <div id="pendingList" class="admin-list"></div>
+        <p class="empty-msg hidden" id="noPending">No pending applications.</p>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-head"><h2>Approved Sellers</h2></div>
+        <div id="approvedList" class="admin-list"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"><i class="fa fa-check-circle"></i> <span id="toastMsg"></span></div>
+
+<script src="auth.js"></script>
+<script>
+  const gate = document.getElementById('adminGate');
+  const panel = document.getElementById('adminPanel');
+
+  async function checkAdmin() {
+    await loadCurrentUser();
+    const user = getCurrentUser();
+    if (isAdmin(user)) {
+      gate.classList.add('hidden');
+      panel.classList.remove('hidden');
+      await renderLists();
+      return true;
+    }
+    return false;
+  }
+
+  document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const result = await login(
+      document.getElementById('adminEmail').value.trim(),
+      document.getElementById('adminPass').value
+    );
+    if (result.ok && isAdmin(result.user)) {
+      showAuthToast('Welcome, Admin!');
+      await checkAdmin();
+    } else if (result.ok) {
+      showAuthToast('This account is not an admin.', true);
+      await clearSession();
+    } else {
+      showAuthToast(result.message, true);
+    }
+  });
+
+  function sellerCard(u, showActions) {
+    const s = u.seller;
+    return `
+      <div class="admin-seller-card">
+        <div class="admin-seller-main">
+          <strong>${s.shopName}</strong>
+          <span class="admin-meta">${u.name} · ${u.email}</span>
+          <span class="admin-meta">Category: ${s.category} · PAN: ${s.pan}</span>
+          <span class="admin-meta">${s.address}</span>
+          <p class="admin-desc">${s.description || '—'}</p>
+          <span class="admin-meta">Applied: ${formatDate(s.appliedAt)}</span>
+        </div>
+        ${showActions ? `
+          <div class="admin-seller-actions">
+            <button type="button" class="btn-auth btn-sm" data-approve="${u.email}"><i class="fa fa-check"></i> Approve</button>
+            <button type="button" class="btn-outline-sm btn-reject" data-reject="${u.email}">Reject</button>
+          </div>
+        ` : `<span class="status-pill status-approved">Approved</span>`}
+      </div>
+    `;
+  }
+
+  async function renderLists() {
+    const pending = await getPendingSellers();
+    const approved = await getApprovedSellers();
+
+    document.getElementById('pendingCount').textContent = pending.length;
+    document.getElementById('noPending').classList.toggle('hidden', pending.length > 0);
+
+    document.getElementById('pendingList').innerHTML = pending.length
+      ? pending.map((u) => sellerCard(u, true)).join('')
+      : '';
+
+    document.getElementById('approvedList').innerHTML = approved.length
+      ? approved.map((u) => sellerCard(u, false)).join('')
+      : '<p class="empty-msg">No approved sellers yet.</p>';
+
+    document.querySelectorAll('[data-approve]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const r = await approveSeller(btn.dataset.approve);
+        showAuthToast(r.ok ? 'Seller approved!' : r.message, !r.ok);
+        await renderLists();
+      });
+    });
+
+    document.querySelectorAll('[data-reject]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Reject this seller application?')) return;
+        const r = await rejectSeller(btn.dataset.reject);
+        showAuthToast(r.ok ? 'Application rejected.' : r.message, !r.ok);
+        await renderLists();
+      });
+    });
+  }
+
+  document.getElementById('refreshBtn')?.addEventListener('click', () => renderLists());
+
+  (async () => {
+    const online = await checkApiHealth();
+    if (!online) showAuthToast('Start server: cd backend && npm start', true);
+    if (!(await checkAdmin())) {
+      gate.classList.remove('hidden');
+      panel.classList.add('hidden');
+    }
+  })();
+</script>
+</body>
+</html>

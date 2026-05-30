@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seller Dashboard – VASTAAR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Raleway:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="account-page">
+
+<header class="header header-simple">
+  <div class="header-main">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text-wrap">
+        <div class="logo-name">VASTAAR</div>
+        <div class="logo-tagline">Seller Dashboard</div>
+      </div>
+    </a>
+    <div class="hdr-actions">
+      <a href="profile.html" class="hdr-btn"><i class="fa fa-user"></i><span>Profile</span></a>
+      <a href="index.html" class="hdr-btn"><i class="fa fa-store"></i><span>View Shop</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="account-layout">
+  <aside class="account-sidebar">
+    <div class="profile-mini">
+      <div class="avatar" id="sellerAvatar">V</div>
+      <div class="profile-mini-name" id="shopNameLabel">—</div>
+      <span class="status-pill status-approved" id="sellerStatusPill">Approved</span>
+    </div>
+    <nav class="account-nav">
+      <a href="#add-item" class="account-nav-link active"><i class="fa fa-plus"></i> Add Item</a>
+      <a href="#my-items" class="account-nav-link"><i class="fa fa-box"></i> My Items</a>
+      <a href="settings.html#seller" class="account-nav-link"><i class="fa fa-gear"></i> Settings</a>
+      <a href="index.html" class="account-nav-link"><i class="fa fa-home"></i> Back to Shop</a>
+    </nav>
+  </aside>
+
+  <div class="account-content">
+    <div id="notApproved" class="settings-section hidden">
+      <h2>Seller access required</h2>
+      <p id="notApprovedMsg">Your seller application must be approved by admin before you can add items.</p>
+      <a href="settings.html#seller" class="btn-auth" style="width:auto;display:inline-flex;">Go to Seller Registration</a>
+      <a href="admin.html" class="link-crimson" style="margin-left:16px;">Admin approves here →</a>
+    </div>
+
+    <div id="sellerPanel">
+      <div class="account-head">
+        <h1>Add Products</h1>
+        <p>Upload photo, optional video, and choose if it appears in Fashion Reels on the homepage.</p>
+      </div>
+
+      <section class="settings-section" id="add-item">
+        <h2 class="settings-section-title"><i class="fa fa-shirt"></i> New Listing</h2>
+        <form id="addItemForm" class="settings-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Product Name <span class="req">*</span></label>
+              <input type="text" id="itemName" required placeholder="e.g. Dhaka Kurta" />
+            </div>
+            <div class="form-group">
+              <label>Brand / Label</label>
+              <input type="text" id="itemBrand" placeholder="Your shop name" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price (Rs.) <span class="req">*</span></label>
+              <input type="number" id="itemPrice" required min="1" placeholder="1899" />
+            </div>
+            <div class="form-group">
+              <label>Original Price (Rs.)</label>
+              <input type="number" id="itemPriceWas" min="0" placeholder="Optional" />
+            </div>
+          </div>
+          <div class="form-row">
+          <div class="form-group">
+            <label>Emoji (only if no photo)</label>
+            <input type="text" id="itemEmoji" maxlength="4" placeholder="Optional" value="" disabled title="Upload a photo — it replaces the emoji on the shop" />
+          </div>
+            <div class="form-group">
+              <label>Badge</label>
+              <select id="itemBadge">
+                <option value="badge-new">NEW</option>
+                <option value="badge-sale">SALE</option>
+                <option value="badge-hot">HOT</option>
+                <option value="badge-best">BESTSELLER</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Product Photo <span class="req">*</span></label>
+            <input type="file" id="itemPhoto" accept="image/*" required />
+            <span class="form-hint">Required — this image shows on the shop instead of an emoji</span>
+            <div class="preview-box hidden" id="photoPreview"></div>
+          </div>
+          <div class="form-group">
+            <label>Product Video (optional)</label>
+            <input type="file" id="itemVideo" accept="video/*" />
+            <span class="form-hint">Short clip for reels — keep under ~5MB for demo storage</span>
+            <div class="preview-box hidden" id="videoPreview"></div>
+          </div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="itemIsReel" />
+            <span>Show in <strong>Fashion Reels</strong> section on homepage (uses video or photo)</span>
+          </label>
+          <button type="submit" class="btn-auth btn-gold"><i class="fa fa-upload"></i> Publish Item</button>
+        </form>
+      </section>
+
+      <section class="settings-section" id="my-items">
+        <h2 class="settings-section-title"><i class="fa fa-list"></i> My Listings</h2>
+        <p class="settings-desc">Items are saved in MongoDB and appear on the shop homepage after you publish.</p>
+        <div id="myItemsList" class="seller-items-grid"></div>
+        <p class="empty-msg hidden" id="noItems">No items yet. Add your first product above.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"><i class="fa fa-check-circle"></i> <span id="toastMsg"></span></div>
+
+<script src="auth.js"></script>
+<script>
+  (async () => {
+  if (!(await requireAuth())) return;
+
+  let user = getCurrentUser();
+  document.getElementById('sellerAvatar').textContent = getInitials(user.name);
+  document.getElementById('shopNameLabel').textContent = user.seller?.shopName || user.name;
+  document.getElementById('itemBrand').value = user.seller?.shopName || '';
+
+  let photoDataUrl = '';
+  let videoDataUrl = '';
+
+  function checkSellerAccess() {
+    if (!isApprovedSeller(user)) {
+      document.getElementById('notApproved').classList.remove('hidden');
+      document.getElementById('sellerPanel').classList.add('hidden');
+      const msg = document.getElementById('notApprovedMsg');
+      if (user.seller?.status === 'pending') {
+        msg.textContent = 'Your application is pending. An admin must approve it at admin.html before you can add items.';
+        document.getElementById('sellerStatusPill').textContent = 'Pending';
+        document.getElementById('sellerStatusPill').className = 'status-pill status-pending';
+      } else {
+        msg.textContent = 'Register as a seller in Settings, then wait for admin approval.';
+      }
+      return false;
+    }
+    return true;
+  }
+
+  if (!checkSellerAccess()) return;
+
+  document.getElementById('itemPhoto').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      photoDataUrl = await compressImageFile(file);
+      const box = document.getElementById('photoPreview');
+      box.classList.remove('hidden');
+      box.innerHTML = `<img src="${photoDataUrl}" alt="Preview" /><span class="form-hint">This is how it will look on the homepage</span>`;
+    } catch {
+      showAuthToast('Could not process image. Try another file.', true);
+      e.target.value = '';
+      photoDataUrl = '';
+    }
+  });
+
+  document.getElementById('itemVideo').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showAuthToast('Video too large. Use under 5MB for demo.', true);
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      videoDataUrl = reader.result;
+      const box = document.getElementById('videoPreview');
+      box.classList.remove('hidden');
+      box.innerHTML = `<video src="${videoDataUrl}" controls muted style="max-width:100%;border-radius:8px;"></video>`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function renderMyItems() {
+    const items = await fetchSellerProducts();
+    const list = document.getElementById('myItemsList');
+    document.getElementById('noItems').classList.toggle('hidden', items.length > 0);
+
+    list.innerHTML = items.map((item) => `
+      <div class="seller-item-card">
+        <div class="seller-item-media">
+          ${item.imageUrl ? `<img src="${item.imageUrl}" alt="">` : `<span class="seller-item-emoji">${item.emoji}</span>`}
+          ${item.isReel ? '<span class="reel-tag">REEL</span>' : ''}
+        </div>
+        <div class="seller-item-info">
+          <strong>${item.name}</strong>
+          <span>Rs. ${item.price.toLocaleString()}</span>
+          ${item.videoUrl ? '<span class="admin-meta"><i class="fa fa-video"></i> Has video</span>' : ''}
+        </div>
+        <button type="button" class="btn-outline-sm btn-reject" data-delete="${item.id}">Delete</button>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-delete]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this item?')) return;
+        const r = await deleteStoreItem(btn.dataset.delete);
+        if (r.ok) {
+          await renderMyItems();
+          showAuthToast('Item removed.');
+        } else {
+          showAuthToast(r.message, true);
+        }
+      });
+    });
+  }
+
+  document.getElementById('addItemForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!photoDataUrl) {
+      showAuthToast('Please upload a product photo first.', true);
+      return;
+    }
+
+    const badge = document.getElementById('itemBadge').value;
+    const badgeText = { 'badge-new': 'NEW', 'badge-sale': 'SALE', 'badge-hot': 'HOT', 'badge-best': 'BEST' }[badge];
+
+    const result = await addStoreItem({
+      name: document.getElementById('itemName').value.trim(),
+      brand: document.getElementById('itemBrand').value.trim(),
+      price: document.getElementById('itemPrice').value,
+      priceWas: document.getElementById('itemPriceWas').value || null,
+      emoji: '',
+      imageUrl: photoDataUrl,
+      videoUrl: videoDataUrl,
+      isReel: document.getElementById('itemIsReel').checked,
+      badge,
+      badgeText,
+    });
+
+    if (result.ok) {
+      showAuthToast('Item published to MongoDB! Refresh the shop page.');
+      e.target.reset();
+      photoDataUrl = '';
+      videoDataUrl = '';
+      document.getElementById('photoPreview').classList.add('hidden');
+      document.getElementById('videoPreview').classList.add('hidden');
+      await renderMyItems();
+    } else {
+      showAuthToast(result.message, true);
+    }
+  });
+
+  await renderMyItems();
+  })();
+</script>
+</body>
+</html>

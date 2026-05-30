@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile – VASTAAR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="account-page">
+
+<header class="header header-simple">
+  <div class="header-main">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text-wrap">
+        <div class="logo-name">VASTAAR</div>
+        <div class="logo-tagline">Nepal's Fashion</div>
+      </div>
+    </a>
+    <div class="hdr-actions">
+      <a href="settings.html" class="hdr-btn" title="Settings"><i class="fa fa-gear"></i><span>Settings</span></a>
+      <a href="index.html" class="hdr-btn"><i class="fa fa-shopping-bag"></i><span>Shop</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="account-layout">
+  <aside class="account-sidebar">
+    <div class="profile-mini" id="profileMini">
+      <div class="avatar" id="profileAvatar">V</div>
+      <div class="profile-mini-name" id="profileName">—</div>
+      <div class="profile-mini-email" id="profileEmail">—</div>
+      <span class="seller-badge hidden" id="sellerBadge">Seller</span>
+    </div>
+    <nav class="account-nav">
+      <a href="profile.html" class="account-nav-link active"><i class="fa fa-user"></i> Profile</a>
+      <a href="settings.html" class="account-nav-link"><i class="fa fa-gear"></i> Settings</a>
+      <a href="seller-dashboard.html" class="account-nav-link hidden" id="navSellerDash"><i class="fa fa-store"></i> Seller Dashboard</a>
+      <a href="index.html" class="account-nav-link"><i class="fa fa-box"></i> My Orders</a>
+      <a href="#" class="account-nav-link" id="wishlistLink"><i class="fa fa-heart"></i> Wishlist</a>
+      <button type="button" class="account-nav-link logout-link" id="logoutBtn"><i class="fa fa-sign-out-alt"></i> Logout</button>
+    </nav>
+  </aside>
+
+  <div class="account-content">
+    <div class="account-head">
+      <h1>My Profile</h1>
+      <p>Manage your account and shopping activity</p>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-head">
+        <h2>Personal Information</h2>
+        <a href="settings.html" class="link-crimson">Edit in Settings <i class="fa fa-arrow-right"></i></a>
+      </div>
+      <div class="info-grid" id="infoGrid"></div>
+    </div>
+
+    <div class="info-card seller-card hidden" id="sellerCard">
+      <div class="info-card-head">
+        <h2><i class="fa fa-store"></i> Seller Account</h2>
+        <span class="status-pill" id="sellerStatus">—</span>
+      </div>
+      <div class="info-grid" id="sellerInfoGrid"></div>
+      <a href="settings.html#seller" class="btn-outline-sm">Manage Seller Settings</a>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-head">
+        <h2>Quick Stats</h2>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-num" id="statOrders">0</span>
+          <span class="stat-label">Orders</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statWishlist">3</span>
+          <span class="stat-label">Wishlist</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statMember">—</span>
+          <span class="stat-label">Member Since</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-seller hidden" id="ctaSeller">
+      <div>
+        <h3>Want to sell on VASTAAR?</h3>
+        <p>Register as a seller and reach customers across Nepal.</p>
+      </div>
+      <a href="settings.html#seller" class="btn-auth">Register as Seller</a>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-head"><h2>Store management</h2></div>
+      <p class="settings-desc" style="margin-bottom:16px;">
+        <strong>Seller registration</strong> is saved in MongoDB. An admin approves it at
+        <a href="admin.html" class="link-crimson">admin.html</a>.
+        Approved sellers add products at
+        <a href="seller-dashboard.html" class="link-crimson">seller-dashboard.html</a>.
+      </p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="admin.html" class="btn-outline-sm"><i class="fa fa-shield-halved"></i> Admin (approve sellers)</a>
+        <a href="seller-dashboard.html" class="btn-outline-sm" id="profileSellerLink"><i class="fa fa-plus"></i> Add products</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"><i class="fa fa-check-circle"></i> <span id="toastMsg"></span></div>
+
+<script src="auth.js"></script>
+<script>
+  (async () => {
+  if (!(await requireAuth())) return;
+
+  const user = getCurrentUser();
+
+  document.getElementById('profileAvatar').textContent = getInitials(user.name);
+  document.getElementById('profileName').textContent = user.name;
+  document.getElementById('profileEmail').textContent = user.email;
+
+  document.getElementById('infoGrid').innerHTML = `
+    <div class="info-item"><span class="info-label">Full Name</span><span class="info-value">${user.name}</span></div>
+    <div class="info-item"><span class="info-label">Email</span><span class="info-value">${user.email}</span></div>
+    <div class="info-item"><span class="info-label">Phone</span><span class="info-value">${user.phone || 'Not added'}</span></div>
+    <div class="info-item"><span class="info-label">Account Type</span><span class="info-value">${user.isSeller ? 'Customer & Seller' : 'Customer'}</span></div>
+  `;
+
+  const memberYear = new Date(user.createdAt).getFullYear();
+  document.getElementById('statMember').textContent = memberYear;
+
+  if (user.isSeller && user.seller?.status === 'approved') {
+    document.getElementById('navSellerDash')?.classList.remove('hidden');
+  }
+
+  if (user.isSeller && user.seller) {
+    document.getElementById('sellerBadge').classList.remove('hidden');
+    document.getElementById('sellerCard').classList.remove('hidden');
+    document.getElementById('ctaSeller').classList.add('hidden');
+
+    const statusEl = document.getElementById('sellerStatus');
+    statusEl.textContent = user.seller.status === 'approved' ? 'Approved' : 'Pending Review';
+    statusEl.className = `status-pill status-${user.seller.status}`;
+
+    document.getElementById('sellerInfoGrid').innerHTML = `
+      <div class="info-item"><span class="info-label">Shop Name</span><span class="info-value">${user.seller.shopName}</span></div>
+      <div class="info-item"><span class="info-label">Category</span><span class="info-value">${user.seller.category}</span></div>
+      <div class="info-item"><span class="info-label">Applied On</span><span class="info-value">${formatDate(user.seller.appliedAt)}</span></div>
+    `;
+  } else {
+    document.getElementById('ctaSeller').classList.remove('hidden');
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => logout());
+  document.getElementById('wishlistLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthToast('Wishlist opens from the shop page.');
+  });
+  })();
+</script>
+</body>
+</html>
