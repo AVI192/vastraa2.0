@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VASTAAR – Nepal's Fashion Destination</title>
+  <title>VASTRAA – Nepal's Fashion Destination</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -12,7 +12,7 @@
 
 <div class="topbar">
   🇳🇵 Free delivery across Nepal on orders above <strong>Rs. 1,500</strong> &nbsp;|&nbsp;
-  Use code <strong>VASTAAR20</strong> for 20% off your first order &nbsp;|&nbsp;
+  Use code <strong>VASTRAA20</strong> for 20% off your first order &nbsp;|&nbsp;
   Easy returns within 30 days
 </div>
 
@@ -21,7 +21,7 @@
     <a href="index.html" class="logo">
       <div class="logo-mark">V</div>
       <div class="logo-text-wrap">
-        <div class="logo-name">VASTAAR</div>
+        <div class="logo-name">VASTRAA</div>
         <div class="logo-tagline">Nepal's Fashion</div>
       </div>
     </a>
@@ -38,17 +38,18 @@
   </div>
   <nav class="navbar">
     <div class="nav-inner">
-      <button class="nav-item">Men</button>
-      <button class="nav-item">Women</button>
-      <button class="nav-item">Kids</button>
-      <button class="nav-item">Ethnic Wear<span class="new-tag">NEW</span></button>
-      <button class="nav-item">Western</button>
-      <button class="nav-item">Footwear</button>
-      <button class="nav-item">Accessories</button>
-      <button type="button" class="nav-item genz-nav">Gen Z<span class="new-tag hot-tag">HOT</span></button>
-      <button class="nav-item">Beauty</button>
-      <button class="nav-item sale-item">🔥 SALE</button>
+      <button class="nav-item" data-cat="Men">Men</button>
+      <button class="nav-item" data-cat="Women">Women</button>
+      <button class="nav-item" data-cat="Kids">Kids</button>
+      <button class="nav-item" data-cat="Ethnic Wear">Ethnic Wear<span class="new-tag">NEW</span></button>
+      <button class="nav-item" data-cat="Western">Western</button>
+      <button class="nav-item" data-cat="Footwear">Footwear</button>
+      <button class="nav-item" data-cat="Accessories">Accessories</button>
+      <button type="button" class="nav-item genz-nav" data-cat="Gen Z">Gen Z<span class="new-tag hot-tag">HOT</span></button>
+      <button class="nav-item" data-cat="Beauty">Beauty</button>
+      <button class="nav-item sale-item" data-cat="Sale">🔥 SALE</button>
     </div>
+    <div class="nav-hover-box" id="navHoverBox"></div>
   </nav>
 </header>
 
@@ -62,12 +63,12 @@
         <div class="geo-ring geo-ring-3"></div>
       </div>
       <div class="hero-content">
-        <div class="hero-pill">New Collection 2024</div>
-        <h1 class="hero-title">Wear the <em>Pride</em><br>of Nepal</h1>
-        <p class="hero-desc">Discover handcrafted ethnic wear, modern Daura-Suruwal, and exquisite Dhaka fabric designs made for every occasion.</p>
+        <div class="hero-pill" id="hero1Pill">New Collection 2024</div>
+        <h1 class="hero-title" id="hero1Title">Wear the <em>Pride</em><br>of Nepal</h1>
+        <p class="hero-desc" id="hero1Desc">Discover handcrafted ethnic wear, modern Daura-Suruwal, and exquisite Dhaka fabric designs made for every occasion.</p>
         <div class="hero-btns">
-          <button class="btn-primary">Shop Now <i class="fa fa-arrow-right"></i></button>
-          <button class="btn-outline">Explore Collection</button>
+          <button class="btn-primary" id="hero1Primary">Shop Now <i class="fa fa-arrow-right"></i></button>
+          <button class="btn-outline" id="hero1Secondary">Explore Collection</button>
         </div>
       </div>
     </div>
@@ -78,12 +79,12 @@
         <div class="geo-ring geo-ring-2"></div>
       </div>
       <div class="hero-content">
-        <div class="hero-pill">Winter Sale</div>
-        <h1 class="hero-title"><em>Upto 60%</em><br>Off on Woolens</h1>
-        <p class="hero-desc">Stay warm and stylish this winter with premium woolen jackets, Pashmina shawls, and cozy knitwear from the best Nepali brands.</p>
+        <div class="hero-pill" id="hero2Pill">Winter Sale</div>
+        <h1 class="hero-title" id="hero2Title"><em>Upto 60%</em><br>Off on Woolens</h1>
+        <p class="hero-desc" id="hero2Desc">Stay warm and stylish this winter with premium woolen jackets, Pashmina shawls, and cozy knitwear from the best Nepali brands.</p>
         <div class="hero-btns">
-          <button class="btn-primary">Grab Deals <i class="fa fa-arrow-right"></i></button>
-          <button class="btn-outline">View All Offers</button>
+          <button class="btn-primary" id="hero2Primary">Grab Deals <i class="fa fa-arrow-right"></i></button>
+          <button class="btn-outline" id="hero2Secondary">View All Offers</button>
         </div>
       </div>
     </div>
@@ -95,12 +96,12 @@
         <div class="geo-ring geo-ring-3"></div>
       </div>
       <div class="hero-content">
-        <div class="hero-pill">Festival Special</div>
-        <h1 class="hero-title">Dashain &<br><em>Tihar</em> Looks</h1>
-        <p class="hero-desc">Celebrate with the finest festival fashion — from vibrant Saris and Kurtas to premium accessories for the whole family.</p>
+        <div class="hero-pill" id="hero3Pill">Festival Special</div>
+        <h1 class="hero-title" id="hero3Title">Dashain &<br><em>Tihar</em> Looks</h1>
+        <p class="hero-desc" id="hero3Desc">Celebrate with the finest festival fashion — from vibrant Saris and Kurtas to premium accessories for the whole family.</p>
         <div class="hero-btns">
-          <button class="btn-primary">Shop Festival <i class="fa fa-arrow-right"></i></button>
-          <button class="btn-outline">Gift Cards</button>
+          <button class="btn-primary" id="hero3Primary">Shop Festival <i class="fa fa-arrow-right"></i></button>
+          <button class="btn-outline" id="hero3Secondary">Gift Cards</button>
         </div>
       </div>
     </div>
@@ -124,39 +125,43 @@
     </div>
     <a href="#" class="view-all">View All <i class="fa fa-arrow-right"></i></a>
   </div>
-  <div class="cat-grid">
-    <div class="cat-card"><div class="cat-circle"><div class="cat-emoji-box c1">👗</div></div><div class="cat-name">Ethnic Wear</div></div>
-    <div class="cat-card"><div class="cat-circle"><div class="cat-emoji-box c2">👕</div></div><div class="cat-name">Western</div></div>
-    <div class="cat-card"><div class="cat-circle"><div class="cat-emoji-box c3">👶</div></div><div class="cat-name">Kids</div></div>
-    <div class="cat-card"><div class="cat-circle"><div class="cat-emoji-box c4">👟</div></div><div class="cat-name">Footwear</div></div>
-    <div class="cat-card"><div class="cat-circle"><div class="cat-emoji-box c5">💎</div></div><div class="cat-name">Jewellery</div></div>
-    <div class="cat-card"><div class="cat-circle"><div class="cat-emoji-box c6">👜</div></div><div class="cat-name">Bags</div></div>
-    <div class="cat-card"><div class="cat-circle"><div class="cat-emoji-box c7">🧴</div></div><div class="cat-name">Beauty</div></div>
+  <div class="cat-grid-wrap">
+    <div class="cat-grid">
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c1"></div></div><div class="cat-name">Ethnic Wear</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c2"></div></div><div class="cat-name">Western</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c8"></div></div><div class="cat-name">Men</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c9"></div></div><div class="cat-name">Women</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c3"></div></div><div class="cat-name">Kids</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c4"></div></div><div class="cat-name">Footwear</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c5"></div></div><div class="cat-name">Jewellery</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c6"></div></div><div class="cat-name">Bags</div></div>
+      <div class="cat-card"><div class="cat-circle"><div class="cat-img c7"></div></div><div class="cat-name">Beauty</div></div>
+    </div>
+    <div class="cat-hover-box hidden" id="catHoverBox"></div>
   </div>
-</div>
 
 <div class="banner-strip fade-in">
   <div class="banner-card banner-bg-1">
     <div class="banner-inner">
-      <div class="banner-tag">Exclusive</div>
-      <div class="banner-title">Dhaka Fabric<br><em>Collection</em></div>
-      <div class="banner-desc">Handwoven heritage patterns — modern cuts</div>
-      <button type="button" class="banner-cta">Shop Now <i class="fa fa-arrow-right"></i></button>
+      <div class="banner-tag" id="banner1Tag">Exclusive</div>
+      <div class="banner-title" id="banner1Title">Dhaka Fabric<br><em>Collection</em></div>
+      <div class="banner-desc" id="banner1Desc">Handwoven heritage patterns — modern cuts</div>
+      <button type="button" class="banner-cta" id="banner1Button">Shop Now <i class="fa fa-arrow-right"></i></button>
     </div>
     <div class="banner-deco">🧵</div>
   </div>
   <div class="banner-card banner-bg-2">
     <div class="banner-inner">
-      <div class="banner-tag">Trending</div>
-      <div class="banner-title">Pashmina &<br><em>Shawls</em></div>
-      <div class="banner-desc">Luxury wool from the Himalayas</div>
-      <button type="button" class="banner-cta">Explore <i class="fa fa-arrow-right"></i></button>
+      <div class="banner-tag" id="banner2Tag">Trending</div>
+      <div class="banner-title" id="banner2Title">Pashmina &<br><em>Shawls</em></div>
+      <div class="banner-desc" id="banner2Desc">Luxury wool from the Himalayas</div>
+      <button type="button" class="banner-cta" id="banner2Button">Explore <i class="fa fa-arrow-right"></i></button>
     </div>
     <div class="banner-deco">🏔️</div>
   </div>
 </div>
 
-<div class="sec fade-in">
+<div class="sec fade-in" id="featured">
   <div class="sec-head">
     <div>
       <div class="sec-title">Featured <span>Products</span></div>
@@ -174,7 +179,7 @@
       <div class="sec-title">From Our <span>Sellers</span></div>
       <div class="sec-sub">Fresh listings from approved Nepali shops — your photo replaces the emoji placeholder</div>
     </div>
-    <a href="seller-dashboard.html" class="view-all">Sell on VASTAAR <i class="fa fa-arrow-right"></i></a>
+    <a href="seller-dashboard.html" class="view-all">Sell on VASTRAA <i class="fa fa-arrow-right"></i></a>
   </div>
   <div class="products-grid" id="sellerProducts"></div>
 </div>
@@ -198,7 +203,7 @@
 
     <div class="genz-grid" id="genzGrid">
       <article class="genz-card" data-category="streetwear tiktok">
-        <div class="genz-card-img g-bg-1"><span class="genz-viral-tag tag-fire">VIRAL</span>🧢</div>
+        <div class="genz-card-img g-bg-1"><span class="genz-viral-tag tag-fire">VIRAL</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#KTMStreet</div>
           <div class="genz-item-name">Oversized Dhaka Bomber Jacket</div>
@@ -209,7 +214,7 @@
         </div>
       </article>
       <article class="genz-card" data-category="y2k tiktok">
-        <div class="genz-card-img g-bg-2"><span class="genz-viral-tag tag-it">IT GIRL</span>👖</div>
+        <div class="genz-card-img g-bg-2"><span class="genz-viral-tag tag-it">IT GIRL</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#Y2KNepal</div>
           <div class="genz-item-name">Low-Rise Cargo Parachute Pants</div>
@@ -220,7 +225,7 @@
         </div>
       </article>
       <article class="genz-card" data-category="tiktok streetwear">
-        <div class="genz-card-img g-bg-3"><span class="genz-viral-tag tag-tiktok">TIKTOK</span>👟</div>
+        <div class="genz-card-img g-bg-3"><span class="genz-viral-tag tag-tiktok">TIKTOK</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#NepalDrip</div>
           <div class="genz-item-name">Chunky Platform Sneakers — White</div>
@@ -231,7 +236,7 @@
         </div>
       </article>
       <article class="genz-card" data-category="oversized y2k">
-        <div class="genz-card-img g-bg-4"><span class="genz-viral-tag tag-fire">FIRE</span>👕</div>
+        <div class="genz-card-img g-bg-4"><span class="genz-viral-tag tag-fire">FIRE</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#MainCharacter</div>
           <div class="genz-item-name">Graphic Oversized Tee — Everest Print</div>
@@ -242,7 +247,7 @@
         </div>
       </article>
       <article class="genz-card" data-category="streetwear oversized">
-        <div class="genz-card-img g-bg-1"><span class="genz-viral-tag tag-it">HOT</span>🕶️</div>
+        <div class="genz-card-img g-bg-1"><span class="genz-viral-tag tag-it">HOT</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#ThamelVibes</div>
           <div class="genz-item-name">Retro Wraparound Sunglasses</div>
@@ -253,7 +258,7 @@
         </div>
       </article>
       <article class="genz-card" data-category="y2k tiktok">
-        <div class="genz-card-img g-bg-2"><span class="genz-viral-tag tag-tiktok">TIKTOK</span>👜</div>
+        <div class="genz-card-img g-bg-2"><span class="genz-viral-tag tag-tiktok">TIKTOK</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#MicroBag</div>
           <div class="genz-item-name">Mini Metallic Crossbody Bag</div>
@@ -264,7 +269,7 @@
         </div>
       </article>
       <article class="genz-card" data-category="streetwear tiktok">
-        <div class="genz-card-img g-bg-3"><span class="genz-viral-tag tag-fire">VIRAL</span>🧥</div>
+        <div class="genz-card-img g-bg-3"><span class="genz-viral-tag tag-fire">VIRAL</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#CozyCore</div>
           <div class="genz-item-name">Fleece Zip-Up Hoodie — Neon Trim</div>
@@ -275,7 +280,7 @@
         </div>
       </article>
       <article class="genz-card" data-category="oversized streetwear">
-        <div class="genz-card-img g-bg-4"><span class="genz-viral-tag tag-it">MUST HAVE</span>⛓️</div>
+        <div class="genz-card-img g-bg-4"><span class="genz-viral-tag tag-it">MUST HAVE</span></div>
         <div class="genz-card-body">
           <div class="genz-hashtag">#Stacked</div>
           <div class="genz-item-name">Layered Silver Chain Set (3pc)</div>
@@ -289,15 +294,15 @@
 
     <div class="genz-banner-row">
       <div class="genz-promo genz-promo-main">
-        <h3>Student Discount — 15% Off</h3>
-        <p>Use code <strong>GENZ15</strong> at checkout. Valid for college IDs across Nepal.</p>
-        <button type="button" class="genz-promo-btn" data-toast="🎓 Code GENZ15 — use at checkout!">Claim Offer <i class="fa fa-arrow-right"></i></button>
+        <h3 id="promo1Headline">Student Discount — 15% Off</h3>
+        <p id="promo1Desc">Use code <strong>GENZ15</strong> at checkout. Valid for college IDs across Nepal.</p>
+        <button type="button" class="genz-promo-btn" id="promo1Button" data-toast="🎓 Code GENZ15 — use at checkout!">Claim Offer <i class="fa fa-arrow-right"></i></button>
         <span class="genz-promo-emoji">🎓</span>
       </div>
       <div class="genz-promo genz-promo-side">
-        <h3>Drop Alerts</h3>
-        <p>Be first on every limited Gen Z drop. Join 50K+ on Instagram.</p>
-        <button type="button" class="genz-promo-btn" data-toast="📲 Follow @vastaar.nepal for drops!">Follow Us</button>
+        <h3 id="promo2Headline">Drop Alerts</h3>
+        <p id="promo2Desc">Be first on every limited Gen Z drop. Join 50K+ on Instagram.</p>
+        <button type="button" class="genz-promo-btn" id="promo2Button" data-toast="📲 Follow @VASTRAA.nepal for drops!">Follow Us</button>
         <span class="genz-promo-emoji">📱</span>
       </div>
     </div>
@@ -325,15 +330,15 @@
 
 <div class="sale-banner fade-in">
   <div class="sale-inner">
-    <div class="sale-pill">⚡ Limited Time Only</div>
-    <div class="sale-title">End of Season <em>SALE</em></div>
-    <div class="sale-desc">Upto 70% off on 10,000+ styles — Hurry, offer ends soon!</div>
+    <div class="sale-pill" id="salePill">⚡ Limited Time Only</div>
+    <div class="sale-title" id="saleTitle">End of Season <em>SALE</em></div>
+    <div class="sale-desc" id="saleDesc">Upto 70% off on 10,000+ styles — Hurry, offer ends soon!</div>
     <div class="sale-timer">
       <div class="timer-block"><div class="timer-num" id="t-h">08</div><div class="timer-label">HOURS</div></div>
       <div class="timer-block"><div class="timer-num" id="t-m">34</div><div class="timer-label">MINS</div></div>
       <div class="timer-block"><div class="timer-num" id="t-s">52</div><div class="timer-label">SECS</div></div>
     </div>
-    <button type="button" class="sale-cta">Grab The Deal <i class="fa fa-arrow-right"></i></button>
+    <button type="button" class="sale-cta" id="saleButton">Grab The Deal <i class="fa fa-arrow-right"></i></button>
   </div>
 </div>
 
@@ -347,14 +352,14 @@
   </div>
   <div class="arrivals-wrap">
     <div class="arrivals-track">
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-1">🥻</div></div><div class="arrival-info"><div class="arrival-brand">Tibetan Arts</div><div class="arrival-name">Red Dhaka Sari</div><div class="arrival-price">Rs. 3,200</div></div></div>
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-2">🧦</div></div><div class="arrival-info"><div class="arrival-brand">SherpaKnit</div><div class="arrival-name">Wool Blend Socks</div><div class="arrival-price">Rs. 399</div></div></div>
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-3">💄</div></div><div class="arrival-info"><div class="arrival-brand">HerbalNep</div><div class="arrival-name">Ayurvedic Lip Tint</div><div class="arrival-price">Rs. 699</div></div></div>
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-4">🕶️</div></div><div class="arrival-info"><div class="arrival-brand">PeakVision</div><div class="arrival-name">UV400 Sunglasses</div><div class="arrival-price">Rs. 1,250</div></div></div>
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-5">💎</div></div><div class="arrival-info"><div class="arrival-brand">KathmanduGems</div><div class="arrival-name">Pearl Earrings</div><div class="arrival-price">Rs. 1,899</div></div></div>
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-6">🧤</div></div><div class="arrival-info"><div class="arrival-brand">HimalWool</div><div class="arrival-name">Cashmere Gloves</div><div class="arrival-price">Rs. 750</div></div></div>
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-7">👒</div></div><div class="arrival-info"><div class="arrival-brand">DhakaStyle</div><div class="arrival-name">Woven Sun Hat</div><div class="arrival-price">Rs. 550</div></div></div>
-      <div class="arrival-card"><div class="arrival-img"><div class="arr-emoji a-bg-8">🎒</div></div><div class="arrival-info"><div class="arrival-brand">EverestGear</div><div class="arrival-name">Heritage Backpack</div><div class="arrival-price">Rs. 2,800</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-1"></div></div><div class="arrival-info"><div class="arrival-brand">Tibetan Arts</div><div class="arrival-name">Red Dhaka Sari</div><div class="arrival-price">Rs. 3,200</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-2"></div></div><div class="arrival-info"><div class="arrival-brand">SherpaKnit</div><div class="arrival-name">Wool Blend Socks</div><div class="arrival-price">Rs. 399</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-3"></div></div><div class="arrival-info"><div class="arrival-brand">HerbalNep</div><div class="arrival-name">Ayurvedic Lip Tint</div><div class="arrival-price">Rs. 699</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-4"></div></div><div class="arrival-info"><div class="arrival-brand">PeakVision</div><div class="arrival-name">UV400 Sunglasses</div><div class="arrival-price">Rs. 1,250</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-5"></div></div><div class="arrival-info"><div class="arrival-brand">KathmanduGems</div><div class="arrival-name">Pearl Earrings</div><div class="arrival-price">Rs. 1,899</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-6"></div></div><div class="arrival-info"><div class="arrival-brand">HimalWool</div><div class="arrival-name">Cashmere Gloves</div><div class="arrival-price">Rs. 750</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-7"></div></div><div class="arrival-info"><div class="arrival-brand">DhakaStyle</div><div class="arrival-name">Woven Sun Hat</div><div class="arrival-price">Rs. 550</div></div></div>
+      <div class="arrival-card"><div class="arrival-img"><div class="arr-photo a-bg-8"></div></div><div class="arrival-info"><div class="arrival-brand">EverestGear</div><div class="arrival-name">Heritage Backpack</div><div class="arrival-price">Rs. 2,800</div></div></div>
     </div>
   </div>
 </div>
@@ -380,7 +385,7 @@
       <div class="logo">
         <div class="logo-mark">V</div>
         <div class="logo-text-wrap">
-          <div class="logo-name">VASTAAR</div>
+          <div class="logo-name">VASTRAA</div>
           <div class="logo-tagline">Nepal's Fashion</div>
         </div>
       </div>
@@ -415,8 +420,8 @@
     <div class="footer-col">
       <h4>Company</h4>
       <ul class="footer-links">
-        <li><a href="#">About VASTAAR</a></li>
-        <li><a href="#">Sell on VASTAAR</a></li>
+        <li><a href="#">About VASTRAA</a></li>
+        <li><a href="#">Sell on VASTRAA</a></li>
         <li><a href="#">Careers</a></li>
         <li><a href="#">Privacy Policy</a></li>
         <li><a href="#">Terms of Use</a></li>
@@ -425,7 +430,7 @@
   </div>
   <div class="footer-bottom">
     <div class="footer-bottom-inner">
-      <div class="footer-copy">© 2024 VASTAAR Fashion Pvt. Ltd. Kathmandu, Nepal. All rights reserved.</div>
+      <div class="footer-copy">© 2024 VASTRAA Fashion Pvt. Ltd. Kathmandu, Nepal. All rights reserved.</div>
       <div class="footer-pay">
         <div class="pay-badge">eSewa</div>
         <div class="pay-badge">Khalti</div>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seller – VASTRAA</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="seller-public-page">
+  <header class="header header-simple">
+    <div class="header-main">
+      <a href="index.html" class="logo"><div class="logo-mark">V</div><div class="logo-text-wrap"><div class="logo-name">VASTRAA</div><div class="logo-tagline">Nepal's Fashion</div></div></a>
+      <div class="hdr-actions"><a href="index.html" class="hdr-btn"><i class="fa fa-shopping-bag"></i><span>Shop</span></a></div>
+    </div>
+  </header>
+
+  <main style="max-width:980px;margin:28px auto;padding:0 12px;">
+    <section id="publicSellerRoot">
+      <div id="sellerHeader" class="seller-profile-top" style="align-items:flex-start;">
+        <div class="seller-avatar-large" id="sellerAvatar">S</div>
+        <div style="flex:1;margin-left:16px;">
+          <h1 id="sellerShop">Seller Shop</h1>
+          <div style="margin-bottom:8px;color:#666;" id="sellerHashtag">@shop</div>
+          <p id="sellerBio">Seller description</p>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+            <button id="publicFollowBtn" class="btn-auth btn-sm">Follow</button>
+            <a id="sellerItemsLink" href="#collection" class="link-crimson">View Collection</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <h2>Reels</h2>
+        <div id="publicReels" class="seller-reels-grid"></div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <h2>Collection</h2>
+        <div id="publicItems" class="seller-items-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Reel viewer (local to this page) -->
+  <div id="sellerReelViewer" class="reel-viewer hidden" aria-hidden="true">
+    <button id="srClose" class="close-btn">Close</button>
+    <video id="srVideo" class="reel-video" playsinline webkit-playsinline controls></video>
+    <div class="reel-meta" id="srMeta"><div id="srTitle"></div><div id="srSellerName"></div></div>
+    <div class="reel-overlay"><button id="srLike">♡ <span id="srLikeCount"></span></button><button id="srNext">Next ▸</button></div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    (async function(){
+      // parse ?email= or ?shop=
+      function qp(name){ const p=new URLSearchParams(location.search); return p.get(name); }
+      const email = qp('email');
+      const shop = qp('shop');
+
+      // helper: find seller user
+      function findSeller() {
+        const users = (typeof getLocalUsers === 'function') ? getLocalUsers() : [];
+        if (email) return users.find(u => String(u.email || '').toLowerCase() === String(email).toLowerCase());
+        if (shop) return users.find(u => String(u.seller?.shopName || '').toLowerCase().replace(/\s+/g,'') === String(shop).toLowerCase().replace(/\s+/g,''));
+        return null;
+      }
+
+      const sellerUser = findSeller();
+      if (!sellerUser) {
+        document.getElementById('publicSellerRoot').innerHTML = '<p>Seller not found. Use ?email=their@email or ?shop=shopname</p>';
+        return;
+      }
+
+      document.getElementById('sellerAvatar').textContent = (sellerUser.seller?.shopName || sellerUser.name || 'S').slice(0,2).toUpperCase();
+      document.getElementById('sellerShop').textContent = sellerUser.seller?.shopName || sellerUser.name;
+      document.getElementById('sellerHashtag').textContent = '@' + String((sellerUser.seller?.shopName || sellerUser.name).toLowerCase().replace(/\s+/g,''));
+      document.getElementById('sellerBio').textContent = sellerUser.seller?.description || 'Shop curated by ' + (sellerUser.seller?.shopName || sellerUser.name);
+
+      // load items
+      let items = [];
+      try {
+        items = (typeof getLocalStoreItems === 'function') ? getLocalStoreItems() : [];
+      } catch { items = []; }
+      items = items.filter(i => String(i.sellerEmail || '').toLowerCase() === String(sellerUser.email || '').toLowerCase());
+
+      const reels = items.filter(it=>it.isReel);
+      const collection = items.filter(it=>!it.isReel);
+
+      const reelsRoot = document.getElementById('publicReels');
+      reelsRoot.innerHTML = reels.length ? reels.map(r=>`<article class="seller-reel-card" data-id="${r.id}"><div class="seller-reel-media">${r.videoUrl?`<video src="${r.videoUrl}" muted loop playsinline></video>`:`<img src="${r.imageUrl||''}"/>`}<span class="reel-badge">Reel</span></div><div style="padding:8px"><strong>${r.name}</strong></div></article>`).join('') : '<p>No reels yet.</p>';
+
+      const itemsRoot = document.getElementById('publicItems');
+      itemsRoot.innerHTML = collection.length ? collection.map(it=>`<article class="seller-item-card"><div class="seller-reel-media">${it.imageUrl?`<img src="${it.imageUrl}"/>`:`<div class="reel-badge">NO PHOTO</div>`}</div><div class="seller-item-info"><div class="seller-item-name">${it.name}</div><div class="seller-item-price">Rs. ${Number(it.price||it.priceNum||0).toLocaleString()}</div></div></article>`).join('') : '<p>No products yet.</p>';
+
+      // follow button
+      const followKey = `seller_followed_${sellerUser.email}`;
+      const btn = document.getElementById('publicFollowBtn');
+      const followed = localStorage.getItem(followKey) === 'true';
+      btn.textContent = followed ? 'Following' : 'Follow';
+      btn.addEventListener('click', ()=>{ const now = localStorage.getItem(followKey) === 'true'; localStorage.setItem(followKey,(!now).toString()); btn.textContent = now ? 'Follow' : 'Following'; });
+
+      // viewer
+      const feed = reels;
+      if (feed.length) {
+        reelsRoot.querySelectorAll('.seller-reel-card').forEach((c, idx)=>{
+          c.style.cursor='pointer';
+          c.addEventListener('click', ()=>openSR(idx));
+        });
+      }
+
+      // viewer functions
+      let cur = 0;
+      function openSR(i){ cur = i||0; document.getElementById('sellerReelViewer').classList.remove('hidden'); document.body.style.overflow='hidden'; showSR(); }
+      function closeSR(){ document.getElementById('sellerReelViewer').classList.add('hidden'); document.body.style.overflow=''; const v=document.getElementById('srVideo'); v.pause(); v.src=''; }
+      function showSR(){ const v=document.getElementById('srVideo'); const it=feed[cur]; if(!it) return; if(it.videoUrl){ v.src=it.videoUrl; v.poster = it.imageUrl||''; v.play().catch(()=>{});} else { v.src=''; v.poster=it.imageUrl||'';} document.getElementById('srTitle').textContent = it.name||''; document.getElementById('srLikeCount').textContent = it.likes||0; }
+      document.getElementById('srNext').addEventListener('click', ()=>{ cur = Math.min(cur+1, feed.length-1); showSR(); });
+      document.getElementById('srClose').addEventListener('click', closeSR);
+
+    })();
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin – Approve Sellers | VASTAAR</title>
+  <title>Admin – Approve Sellers | VASTRAA</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Raleway:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -15,7 +15,7 @@
     <a href="index.html" class="logo">
       <div class="logo-mark">V</div>
       <div class="logo-text-wrap">
-        <div class="logo-name">VASTAAR</div>
+        <div class="logo-name">VASTRAA</div>
         <div class="logo-tagline">Admin Panel</div>
       </div>
     </a>
@@ -31,8 +31,8 @@
     </div>
 
     <div class="admin-info-box">
-      <strong>Admin login:</strong> <code>admin@vastaar.com</code> / <code>admin123</code> (set in <code>backend/.env</code>)<br>
-      Data is stored in MongoDB collections: <code>users</code>, <code>products</code>, <code>carts</code>.
+      <strong>Admin login:</strong> <code>admin@VASTRAA.com</code> / <code>admin123</code><br>
+      Works with backend or locally via browser storage when server is offline.
     </div>
 
     <div id="adminGate" class="settings-section">
@@ -40,7 +40,7 @@
       <form id="adminLoginForm" class="settings-form" style="max-width: 400px;">
         <div class="form-group">
           <label>Email</label>
-          <input type="email" id="adminEmail" value="admin@vastaar.com" required />
+          <input type="email" id="adminEmail" value="admin@VASTRAA.com" required />
         </div>
         <div class="form-group">
           <label>Password</label>
@@ -64,6 +64,147 @@
         <div class="info-card-head"><h2>Approved Sellers</h2></div>
         <div id="approvedList" class="admin-list"></div>
       </div>
+
+      <div class="info-card">
+        <div class="info-card-head"><h2>Advertisement Editor</h2></div>
+        <form id="adContentForm" class="settings-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="hero1Pill">Hero 1 Label</label>
+              <input id="hero1Pill" type="text" placeholder="New Collection 2024" />
+            </div>
+            <div class="form-group">
+              <label for="hero1Title">Hero 1 Title</label>
+              <input id="hero1Title" type="text" placeholder="Wear the Pride of Nepal" />
+            </div>
+            <div class="form-group">
+              <label for="hero1Desc">Hero 1 Description</label>
+              <input id="hero1Desc" type="text" placeholder="Discover handcrafted ethnic wear..." />
+            </div>
+            <div class="form-group">
+              <label for="hero1Primary">Hero 1 Primary Button</label>
+              <input id="hero1Primary" type="text" placeholder="Shop Now" />
+            </div>
+            <div class="form-group">
+              <label for="hero1Secondary">Hero 1 Secondary Button</label>
+              <input id="hero1Secondary" type="text" placeholder="Explore Collection" />
+            </div>
+            <div class="form-group">
+              <label for="hero2Pill">Hero 2 Label</label>
+              <input id="hero2Pill" type="text" placeholder="Winter Sale" />
+            </div>
+            <div class="form-group">
+              <label for="hero2Title">Hero 2 Title</label>
+              <input id="hero2Title" type="text" placeholder="Upto 60% Off on Woolens" />
+            </div>
+            <div class="form-group">
+              <label for="hero2Desc">Hero 2 Description</label>
+              <input id="hero2Desc" type="text" placeholder="Stay warm and stylish this winter..." />
+            </div>
+            <div class="form-group">
+              <label for="hero2Primary">Hero 2 Primary Button</label>
+              <input id="hero2Primary" type="text" placeholder="Grab Deals" />
+            </div>
+            <div class="form-group">
+              <label for="hero2Secondary">Hero 2 Secondary Button</label>
+              <input id="hero2Secondary" type="text" placeholder="View All Offers" />
+            </div>
+            <div class="form-group">
+              <label for="hero3Pill">Hero 3 Label</label>
+              <input id="hero3Pill" type="text" placeholder="Festival Special" />
+            </div>
+            <div class="form-group">
+              <label for="hero3Title">Hero 3 Title</label>
+              <input id="hero3Title" type="text" placeholder="Dashain & Tihar Looks" />
+            </div>
+            <div class="form-group">
+              <label for="hero3Desc">Hero 3 Description</label>
+              <input id="hero3Desc" type="text" placeholder="Celebrate with the finest festival fashion..." />
+            </div>
+            <div class="form-group">
+              <label for="hero3Primary">Hero 3 Primary Button</label>
+              <input id="hero3Primary" type="text" placeholder="Shop Festival" />
+            </div>
+            <div class="form-group">
+              <label for="hero3Secondary">Hero 3 Secondary Button</label>
+              <input id="hero3Secondary" type="text" placeholder="Gift Cards" />
+            </div>
+            <div class="form-group">
+              <label for="banner1Tag">Banner 1 Tag</label>
+              <input id="banner1Tag" type="text" placeholder="Exclusive" />
+            </div>
+            <div class="form-group">
+              <label for="banner1Title">Banner 1 Title</label>
+              <input id="banner1Title" type="text" placeholder="Dhaka Fabric Collection" />
+            </div>
+            <div class="form-group">
+              <label for="banner1Desc">Banner 1 Description</label>
+              <input id="banner1Desc" type="text" placeholder="Handwoven heritage patterns — modern cuts" />
+            </div>
+            <div class="form-group">
+              <label for="banner1Button">Banner 1 Button</label>
+              <input id="banner1Button" type="text" placeholder="Shop Now" />
+            </div>
+            <div class="form-group">
+              <label for="banner2Tag">Banner 2 Tag</label>
+              <input id="banner2Tag" type="text" placeholder="Trending" />
+            </div>
+            <div class="form-group">
+              <label for="banner2Title">Banner 2 Title</label>
+              <input id="banner2Title" type="text" placeholder="Pashmina & Shawls" />
+            </div>
+            <div class="form-group">
+              <label for="banner2Desc">Banner 2 Description</label>
+              <input id="banner2Desc" type="text" placeholder="Luxury wool from the Himalayas" />
+            </div>
+            <div class="form-group">
+              <label for="banner2Button">Banner 2 Button</label>
+              <input id="banner2Button" type="text" placeholder="Explore" />
+            </div>
+            <div class="form-group">
+              <label for="salePill">Sale Banner Tag</label>
+              <input id="salePill" type="text" placeholder="⚡ Limited Time Only" />
+            </div>
+            <div class="form-group">
+              <label for="saleTitle">Sale Title</label>
+              <input id="saleTitle" type="text" placeholder="End of Season SALE" />
+            </div>
+            <div class="form-group">
+              <label for="saleDesc">Sale Description</label>
+              <input id="saleDesc" type="text" placeholder="Upto 70% off on 10,000+ styles — Hurry, offer ends soon!" />
+            </div>
+            <div class="form-group">
+              <label for="saleButton">Sale Button</label>
+              <input id="saleButton" type="text" placeholder="Grab The Deal" />
+            </div>
+            <div class="form-group">
+              <label for="promo1Headline">Promo 1 Headline</label>
+              <input id="promo1Headline" type="text" placeholder="Student Discount — 15% Off" />
+            </div>
+            <div class="form-group">
+              <label for="promo1Desc">Promo 1 Description</label>
+              <input id="promo1Desc" type="text" placeholder="Use code GENZ15 at checkout..." />
+            </div>
+            <div class="form-group">
+              <label for="promo1Button">Promo 1 Button</label>
+              <input id="promo1Button" type="text" placeholder="Claim Offer" />
+            </div>
+            <div class="form-group">
+              <label for="promo2Headline">Promo 2 Headline</label>
+              <input id="promo2Headline" type="text" placeholder="Drop Alerts" />
+            </div>
+            <div class="form-group">
+              <label for="promo2Desc">Promo 2 Description</label>
+              <input id="promo2Desc" type="text" placeholder="Be first on every limited Gen Z drop..." />
+            </div>
+            <div class="form-group">
+              <label for="promo2Button">Promo 2 Button</label>
+              <input id="promo2Button" type="text" placeholder="Follow Us" />
+            </div>
+          </div>
+          <button type="submit" class="btn-auth">Save Promotion Content</button>
+        </form>
+      </div>
     </div>
   </div>
 </main>
@@ -82,6 +223,7 @@
       gate.classList.add('hidden');
       panel.classList.remove('hidden');
       await renderLists();
+      fillAdEditor(getAdminContent());
       return true;
     }
     return false;
@@ -158,6 +300,96 @@
       });
     });
   }
+
+  function setField(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value || '';
+  }
+
+  function getField(id) {
+    return document.getElementById(id)?.value || '';
+  }
+
+  function fillAdEditor(content) {
+    setField('hero1Pill', content.hero1Pill);
+    setField('hero1Title', content.hero1Title);
+    setField('hero1Desc', content.hero1Desc);
+    setField('hero1Primary', content.hero1Primary);
+    setField('hero1Secondary', content.hero1Secondary);
+    setField('hero2Pill', content.hero2Pill);
+    setField('hero2Title', content.hero2Title);
+    setField('hero2Desc', content.hero2Desc);
+    setField('hero2Primary', content.hero2Primary);
+    setField('hero2Secondary', content.hero2Secondary);
+    setField('hero3Pill', content.hero3Pill);
+    setField('hero3Title', content.hero3Title);
+    setField('hero3Desc', content.hero3Desc);
+    setField('hero3Primary', content.hero3Primary);
+    setField('hero3Secondary', content.hero3Secondary);
+    setField('banner1Tag', content.banner1Tag);
+    setField('banner1Title', content.banner1Title);
+    setField('banner1Desc', content.banner1Desc);
+    setField('banner1Button', content.banner1Button);
+    setField('banner2Tag', content.banner2Tag);
+    setField('banner2Title', content.banner2Title);
+    setField('banner2Desc', content.banner2Desc);
+    setField('banner2Button', content.banner2Button);
+    setField('salePill', content.salePill);
+    setField('saleTitle', content.saleTitle);
+    setField('saleDesc', content.saleDesc);
+    setField('saleButton', content.saleButton);
+    setField('promo1Headline', content.promo1Headline);
+    setField('promo1Desc', content.promo1Desc);
+    setField('promo1Button', content.promo1Button);
+    setField('promo2Headline', content.promo2Headline);
+    setField('promo2Desc', content.promo2Desc);
+    setField('promo2Button', content.promo2Button);
+  }
+
+  function collectAdContent() {
+    return {
+      hero1Pill: getField('hero1Pill'),
+      hero1Title: getField('hero1Title'),
+      hero1Desc: getField('hero1Desc'),
+      hero1Primary: getField('hero1Primary'),
+      hero1Secondary: getField('hero1Secondary'),
+      hero2Pill: getField('hero2Pill'),
+      hero2Title: getField('hero2Title'),
+      hero2Desc: getField('hero2Desc'),
+      hero2Primary: getField('hero2Primary'),
+      hero2Secondary: getField('hero2Secondary'),
+      hero3Pill: getField('hero3Pill'),
+      hero3Title: getField('hero3Title'),
+      hero3Desc: getField('hero3Desc'),
+      hero3Primary: getField('hero3Primary'),
+      hero3Secondary: getField('hero3Secondary'),
+      banner1Tag: getField('banner1Tag'),
+      banner1Title: getField('banner1Title'),
+      banner1Desc: getField('banner1Desc'),
+      banner1Button: getField('banner1Button'),
+      banner2Tag: getField('banner2Tag'),
+      banner2Title: getField('banner2Title'),
+      banner2Desc: getField('banner2Desc'),
+      banner2Button: getField('banner2Button'),
+      salePill: getField('salePill'),
+      saleTitle: getField('saleTitle'),
+      saleDesc: getField('saleDesc'),
+      saleButton: getField('saleButton'),
+      promo1Headline: getField('promo1Headline'),
+      promo1Desc: getField('promo1Desc'),
+      promo1Button: getField('promo1Button'),
+      promo2Headline: getField('promo2Headline'),
+      promo2Desc: getField('promo2Desc'),
+      promo2Button: getField('promo2Button'),
+    };
+  }
+
+  document.getElementById('adContentForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const content = collectAdContent();
+    saveAdminContent(content);
+    showAuthToast('Advertisement content saved.');
+  });
 
   document.getElementById('refreshBtn')?.addEventListener('click', () => renderLists());
 

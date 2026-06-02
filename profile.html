@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Profile – VASTAAR</title>
+  <title>My Profile – VASTRAA</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -15,7 +15,7 @@
     <a href="index.html" class="logo">
       <div class="logo-mark">V</div>
       <div class="logo-text-wrap">
-        <div class="logo-name">VASTAAR</div>
+        <div class="logo-name">VASTRAA</div>
         <div class="logo-tagline">Nepal's Fashion</div>
       </div>
     </a>
@@ -67,6 +67,55 @@
       <a href="settings.html#seller" class="btn-outline-sm">Manage Seller Settings</a>
     </div>
 
+    <div class="info-card seller-public hidden" id="sellerPublicSection">
+      <div class="seller-profile-top">
+        <div class="seller-avatar-large" id="publicSellerAvatar">S</div>
+        <div class="seller-profile-copy">
+          <div class="seller-handle">
+            <h2 id="publicSellerShop">Seller Shop</h2>
+            <span class="seller-hashtag" id="publicSellerHashtag">@shopname</span>
+          </div>
+          <p class="seller-bio" id="publicSellerBio">The seller profile description appears here once your shop is approved and live on VASTRAA.</p>
+          <div class="seller-social-grid">
+            <div class="seller-social-card">
+              <strong id="sellerFollowers">0</strong>
+              <span>Followers</span>
+            </div>
+            <div class="seller-social-card">
+              <strong id="sellerFollowing">0</strong>
+              <span>Following</span>
+            </div>
+            <div class="seller-social-card">
+              <strong id="sellerPosts">0</strong>
+              <span>Posts</span>
+            </div>
+            <div class="seller-social-card">
+              <strong id="sellerReelLikes">0</strong>
+              <span>Reel Likes</span>
+            </div>
+          </div>
+          <div class="seller-action-row">
+            <button class="btn-auth btn-sm" id="followSellerBtn">Follow</button>
+            <span class="seller-status-note hidden" id="sellerProfileNote"></span>
+          </div>
+        </div>
+      </div>
+      <div class="seller-tabs" id="sellerTabs">
+        <button class="seller-tab active" data-tab="reels">Reels</button>
+        <button class="seller-tab" data-tab="collection">Collection</button>
+        <button class="seller-tab" data-tab="about">About</button>
+      </div>
+      <div class="seller-tab-panel" id="sellerReelsPanel">
+        <div class="seller-reels-grid" id="sellerReels"></div>
+      </div>
+      <div class="seller-tab-panel hidden" id="sellerCollectionPanel">
+        <div class="seller-items-grid" id="sellerItemsGrid"></div>
+      </div>
+      <div class="seller-tab-panel hidden" id="sellerAboutPanel">
+        <p class="seller-about-text" id="sellerAboutText"></p>
+      </div>
+    </div>
+
     <div class="info-card">
       <div class="info-card-head">
         <h2>Quick Stats</h2>
@@ -89,7 +138,7 @@
 
     <div class="cta-seller hidden" id="ctaSeller">
       <div>
-        <h3>Want to sell on VASTAAR?</h3>
+        <h3>Want to sell on VASTRAA?</h3>
         <p>Register as a seller and reach customers across Nepal.</p>
       </div>
       <a href="settings.html#seller" class="btn-auth">Register as Seller</a>
@@ -112,6 +161,21 @@
 </main>
 
 <div class="toast" id="toast"><i class="fa fa-check-circle"></i> <span id="toastMsg"></span></div>
+ 
+<!-- Fullscreen Reel Viewer -->
+<div id="reelViewer" class="reel-viewer hidden" aria-hidden="true">
+  <button id="reelClose" class="close-btn">Close</button>
+  <video id="reelVideo" class="reel-video" playsinline webkit-playsinline controls></video>
+  <div class="reel-meta" id="reelMeta">
+    <div id="reelTitle"></div>
+    <div id="reelSeller"></div>
+  </div>
+  <div class="reel-overlay" id="reelOverlay">
+    <button id="reelLike">♡<span id="reelLikeCount"></span></button>
+    <button id="reelComment">💬<span id="reelCommentCount"></span></button>
+    <button id="reelNext">Next ▸</button>
+  </div>
+</div>
 
 <script src="auth.js"></script>
 <script>
@@ -152,6 +216,9 @@
       <div class="info-item"><span class="info-label">Category</span><span class="info-value">${user.seller.category}</span></div>
       <div class="info-item"><span class="info-label">Applied On</span><span class="info-value">${formatDate(user.seller.appliedAt)}</span></div>
     `;
+    if (user.seller.status === 'approved') {
+      await renderSellerPublicProfile(user);
+    }
   } else {
     document.getElementById('ctaSeller').classList.remove('hidden');
   }
@@ -162,6 +229,226 @@
     showAuthToast('Wishlist opens from the shop page.');
   });
   })();
+
+  async function renderSellerPublicProfile(user) {
+    const section = document.getElementById('sellerPublicSection');
+    if (!section) return;
+    section.classList.remove('hidden');
+    const shopName = user.seller.shopName || user.name;
+    const hashtag = `@${String(user.seller.shopName || user.name).trim().toLowerCase().replace(/\s+/g, '')}`;
+    document.getElementById('publicSellerAvatar').textContent = getInitials(shopName);
+    document.getElementById('publicSellerShop').textContent = shopName;
+    document.getElementById('publicSellerHashtag').textContent = hashtag;
+    document.getElementById('publicSellerBio').textContent = user.seller.description || `Curated fashion collections from ${shopName}. Follow for the latest drops, Reels and exclusive shop updates.`;
+    document.getElementById('sellerAboutText').textContent = user.seller.description || `Welcome to ${shopName}. Here you can explore seasonal picks, new arrivals, and featured Reels from our store.`;
+
+    let items = await fetchSellerProducts();
+    // fallback: if API/local fetch returned no items, try localStoreItems matching this seller
+    if ((!items || items.length === 0) && typeof getLocalStoreItems === 'function') {
+      try {
+        const all = getLocalStoreItems();
+        items = (all || []).filter((i) => String(i.sellerEmail || '').toLowerCase() === String(user.email || '').toLowerCase());
+      } catch {
+        items = [];
+      }
+    }
+    const reels = items.filter((item) => item.isReel);
+    const collection = items.filter((item) => !item.isReel);
+    document.getElementById('sellerPosts').textContent = items.length;
+    document.getElementById('sellerReelLikes').textContent = reels.reduce((sum, item) => sum + (item.likes || 120), 0).toLocaleString();
+    document.getElementById('sellerFollowers').textContent = localStorage.getItem(`seller_followers_${user.email}`) || '1.2K';
+    document.getElementById('sellerFollowing').textContent = localStorage.getItem(`seller_following_${user.email}`) || '348';
+    document.getElementById('sellerProfileNote').classList.remove('hidden');
+    document.getElementById('sellerProfileNote').textContent = 'Your seller page is public to buyers on VASTRAA.';
+
+    renderSellerReels(reels);
+    renderSellerItems(collection);
+    initSellerTabs();
+    initSellerFollowButton(user.email);
+  }
+
+  function createSellerReelCard(item) {
+    return `
+      <article class="seller-reel-card">
+        <div class="seller-reel-media">
+          ${item.videoUrl ? `<video src="${item.videoUrl}" muted loop playsinline autoplay></video>` : item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}" />` : `<div class="reel-badge">NO MEDIA</div>`}
+          <span class="reel-badge">Reel</span>
+        </div>
+        <div class="seller-reel-body">
+          <h3 class="seller-reel-title">${item.name}</h3>
+          <div class="seller-reel-meta">
+            <span><i class="fa fa-heart"></i> ${item.likes || 132}</span>
+            <span><i class="fa fa-comment"></i> ${item.comments || 18}</span>
+            <span><i class="fa fa-eye"></i> ${item.views || 820}</span>
+          </div>
+          <div class="seller-reel-actions">
+            <button type="button" class="btn-action">Like</button>
+            <button type="button" class="btn-action">Comment</button>
+            <button type="button" class="btn-action">Share</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function createSellerItemCard(item) {
+    return `
+      <article class="seller-item-card">
+        <div class="seller-reel-media">
+          ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}" />` : `<div class="reel-badge">NO PHOTO</div>`}
+        </div>
+        <div class="seller-item-info">
+          <div class="seller-item-name">${item.name}</div>
+          <div class="seller-item-badge">${item.brand || item.shopName || 'VASTRAA Seller'}</div>
+          <div class="seller-item-price">${item.now || (item.price ? `Rs. ${item.price.toLocaleString('en-NP')}` : item.priceNum ? `Rs. ${Number(item.priceNum).toLocaleString('en-NP')}` : 'Rs. 0')}</div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderSellerReels(reels) {
+    const container = document.getElementById('sellerReels');
+    if (!container) return;
+    container.innerHTML = reels.length ? reels.map(createSellerReelCard).join('') : '<p class="seller-about-text">No Reels yet. Add a reel-enabled product from your seller dashboard.</p>';
+    // prepare viewer feed and attach click handlers
+    window._sellerReelsFeed = reels || [];
+    if ((window._sellerReelsFeed || []).length) {
+      const cards = container.querySelectorAll('.seller-reel-card');
+      cards.forEach((card, idx) => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          openReelViewer(window._sellerReelsFeed, idx);
+        });
+      });
+    }
+  }
+
+  function renderSellerItems(items) {
+    const container = document.getElementById('sellerItemsGrid');
+    if (!container) return;
+    container.innerHTML = items.length ? items.map(createSellerItemCard).join('') : '<p class="seller-about-text">No listed items yet. Add products to show your collection here.</p>';
+  }
+
+  function initSellerTabs() {
+    document.querySelectorAll('.seller-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.seller-tab').forEach((t) => t.classList.toggle('active', t === tab));
+        document.querySelectorAll('.seller-tab-panel').forEach((panel) => panel.classList.toggle('hidden', panel.id !== `seller${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}Panel`));
+      });
+    });
+  }
+
+  function initSellerFollowButton(email) {
+    const followBtn = document.getElementById('followSellerBtn');
+    if (!followBtn) return;
+    const storageKey = `seller_followed_${email}`;
+    const followed = localStorage.getItem(storageKey) === 'true';
+    followBtn.textContent = followed ? 'Following' : 'Follow';
+    followBtn.classList.toggle('btn-following', followed);
+    followBtn.addEventListener('click', () => {
+      const isFollowing = localStorage.getItem(storageKey) === 'true';
+      localStorage.setItem(storageKey, (!isFollowing).toString());
+      followBtn.textContent = isFollowing ? 'Follow' : 'Following';
+      followBtn.classList.toggle('btn-following', !isFollowing);
+      showAuthToast(isFollowing ? 'Unfollowed seller.' : 'Following seller now.');
+    });
+  }
+
+  /* Fullscreen reel viewer controls */
+  let _currentReelIndex = 0;
+  function openReelViewer(feed, startIndex) {
+    window._sellerReelsFeed = feed || window._sellerReelsFeed || [];
+    _currentReelIndex = Number(startIndex) || 0;
+    const viewer = document.getElementById('reelViewer');
+    const vid = document.getElementById('reelVideo');
+    viewer.classList.remove('hidden');
+    viewer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    showReelAt(_currentReelIndex);
+    // listeners
+    document.getElementById('reelClose').onclick = closeReelViewer;
+    document.getElementById('reelNext').onclick = nextReel;
+    document.getElementById('reelLike').onclick = () => toggleLikeReel(_currentReelIndex);
+    // keyboard
+    document.addEventListener('keydown', _reelKeyHandler);
+    // touch swipe
+    setupReelTouchHandlers();
+  }
+
+  function showReelAt(index) {
+    const feed = window._sellerReelsFeed || [];
+    if (!feed.length || index < 0 || index >= feed.length) return;
+    _currentReelIndex = index;
+    const item = feed[_currentReelIndex];
+    const vid = document.getElementById('reelVideo');
+    const title = document.getElementById('reelTitle');
+    const seller = document.getElementById('reelSeller');
+    const likeCount = document.getElementById('reelLikeCount');
+    const commentCount = document.getElementById('reelCommentCount');
+    // set source
+    if (item.videoUrl) {
+      vid.src = item.videoUrl;
+      vid.poster = item.imageUrl || '';
+      vid.play().catch(()=>{});
+    } else if (item.imageUrl) {
+      vid.src = '';
+      // use poster by creating a short video-like placeholder
+      vid.poster = item.imageUrl;
+    } else {
+      vid.src = '';
+      vid.poster = '';
+    }
+    title.textContent = item.name || '';
+    seller.textContent = item.shopName || item.brand || '';
+    likeCount.textContent = item.likes || 0;
+    commentCount.textContent = item.comments || 0;
+  }
+
+  function closeReelViewer() {
+    const viewer = document.getElementById('reelViewer');
+    const vid = document.getElementById('reelVideo');
+    viewer.classList.add('hidden');
+    viewer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    vid.pause();
+    vid.src = '';
+    document.removeEventListener('keydown', _reelKeyHandler);
+  }
+
+  function nextReel() { showReelAt(Math.min(_currentReelIndex + 1, (window._sellerReelsFeed||[]).length - 1)); }
+  function prevReel() { showReelAt(Math.max(_currentReelIndex - 1, 0)); }
+
+  function _reelKeyHandler(e) {
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') { nextReel(); }
+    if (e.key === 'ArrowUp' || e.key === 'PageUp') { prevReel(); }
+    if (e.key === 'Escape') { closeReelViewer(); }
+  }
+
+  function toggleLikeReel(idx) {
+    const feed = window._sellerReelsFeed || [];
+    if (!feed[idx]) return;
+    feed[idx].likes = (feed[idx].likes || 0) + 1;
+    document.getElementById('reelLikeCount').textContent = feed[idx].likes;
+    // persist optional: update local store
+    try {
+      const all = getLocalStoreItems() || [];
+      const found = all.find((it) => it.id === feed[idx].id);
+      if (found) { found.likes = feed[idx].likes; saveLocalStoreItems(all); }
+    } catch {}
+  }
+
+  function setupReelTouchHandlers() {
+    const viewer = document.getElementById('reelViewer');
+    let startY = 0;
+    viewer.ontouchstart = (e) => { startY = e.touches[0].clientY; };
+    viewer.ontouchend = (e) => {
+      const endY = (e.changedTouches && e.changedTouches[0].clientY) || 0;
+      const dy = endY - startY;
+      if (dy < -50) { nextReel(); }
+      if (dy > 50) { prevReel(); }
+    };
+  }
 </script>
 </body>
 </html>

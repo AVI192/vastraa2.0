@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shopping Bag – VASTAAR</title>
+  <title>Shopping Bag – VASTRAA</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Raleway:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -15,7 +15,7 @@
     <a href="index.html" class="logo">
       <div class="logo-mark">V</div>
       <div class="logo-text-wrap">
-        <div class="logo-name">VASTAAR</div>
+        <div class="logo-name">VASTRAA</div>
         <div class="logo-tagline">Shopping Bag</div>
       </div>
     </a>
@@ -95,10 +95,10 @@
         <div class="cart-line-media">
           ${item.imageUrl && hasValidImage(item.imageUrl)
             ? `<img src="${item.imageUrl}" alt="" />`
-            : `<span class="cart-line-emoji">${item.emoji || '👗'}</span>`}
+            : `<div class="cart-line-placeholder"></div>`}
         </div>
         <div class="cart-line-info">
-          <div class="cart-line-brand">${escapeHtml(item.brand || 'VASTAAR')}</div>
+          <div class="cart-line-brand">${escapeHtml(item.brand || 'VASTRAA')}</div>
           <div class="cart-line-name">${escapeHtml(item.name)}</div>
           <div class="cart-line-price">${item.priceLabel || `Rs. ${(item.price || 0).toLocaleString()}`} × ${item.qty || 1}</div>
         </div>
@@ -118,7 +118,7 @@
   }
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
-    showAuthToast('Checkout coming soon — thank you for shopping VASTAAR!');
+    showAuthToast('Checkout coming soon — thank you for shopping VASTRAA!');
   });
 
   renderCart();

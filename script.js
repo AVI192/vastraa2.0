@@ -1,16 +1,17 @@
 /* ======================================================
-   VASTAAR – Main JavaScript
+   VASTRAA – Main JavaScript
 ====================================================== */
 
 const PRODUCTS = [
-  { emoji: '🥻', bg: 'p-bg-1', badge: 'badge-sale', badgeText: '40% OFF', brand: 'Tibetan Arts', name: 'Traditional Dhaka Kurta', now: 'Rs. 1,899', was: 'Rs. 3,199', off: '40% off', rating: '4.5', count: '1,284', priceNum: 1899 },
-  { emoji: '👔', bg: 'p-bg-2', badge: 'badge-new', badgeText: 'NEW', brand: 'NepalMen', name: 'Classic Daura Suruwal Set', now: 'Rs. 2,499', was: 'Rs. 3,800', off: '34% off', rating: '4.7', count: '2,891', priceNum: 2499 },
-  { emoji: '💍', bg: 'p-bg-3', badge: 'badge-hot', badgeText: 'HOT', brand: 'KathmanduGems', name: 'Silver Filigree Necklace', now: 'Rs. 3,200', was: 'Rs. 5,000', off: '36% off', rating: '4.8', count: '956', priceNum: 3200 },
-  { emoji: '👡', bg: 'p-bg-4', badge: 'badge-best', badgeText: 'BESTSELLER', brand: 'EverestSteps', name: 'Handcrafted Leather Heels', now: 'Rs. 2,150', was: 'Rs. 3,500', off: '39% off', rating: '4.6', count: '3,412', priceNum: 2150 },
-  { emoji: '🧥', bg: 'p-bg-5', badge: 'badge-sale', badgeText: '50% OFF', brand: 'HimalWool', name: 'Premium Pashmina Jacket', now: 'Rs. 4,500', was: 'Rs. 9,000', off: '50% off', rating: '4.9', count: '5,020', priceNum: 4500 },
-  { emoji: '👛', bg: 'p-bg-6', badge: 'badge-new', badgeText: 'NEW', brand: 'DhakaStyle', name: 'Woven Dhaka Clutch Bag', now: 'Rs. 1,350', was: 'Rs. 2,000', off: '32% off', rating: '4.4', count: '788', priceNum: 1350 },
-  { emoji: '🧣', bg: 'p-bg-7', badge: 'badge-hot', badgeText: 'HOT', brand: 'SherpaKnit', name: 'Yak Wool Muffler Scarf', now: 'Rs. 890', was: 'Rs. 1,400', off: '36% off', rating: '4.6', count: '1,905', priceNum: 890 },
-  { emoji: '🧢', bg: 'p-bg-8', badge: 'badge-best', badgeText: 'BESTSELLER', brand: 'NepalPeak', name: 'Trekking Cap Collection', now: 'Rs. 599', was: 'Rs. 999', off: '40% off', rating: '4.3', count: '4,110', priceNum: 599 },
+  { emoji: '🥻', bg: 'p-bg-1', badge: 'badge-sale', badgeText: '40% OFF', brand: 'Tibetan Arts', name: 'Traditional Dhaka Kurta', now: 'Rs. 1,899', was: 'Rs. 3,199', off: '40% off', rating: '4.5', count: '1,284', priceNum: 1899, category: 'Ethnic Wear' },
+  { emoji: '👔', bg: 'p-bg-2', badge: 'badge-new', badgeText: 'NEW', brand: 'NepalMen', name: 'Classic Daura Suruwal Set', now: 'Rs. 2,499', was: 'Rs. 3,800', off: '34% off', rating: '4.7', count: '2,891', priceNum: 2499, category: 'Ethnic Wear' },
+  { emoji: '💍', bg: 'p-bg-3', badge: 'badge-hot', badgeText: 'HOT', brand: 'KathmanduGems', name: 'Silver Filigree Necklace', now: 'Rs. 3,200', was: 'Rs. 5,000', off: '36% off', rating: '4.8', count: '956', priceNum: 3200, category: 'Jewellery' },
+  { emoji: '👡', bg: 'p-bg-4', badge: 'badge-best', badgeText: 'BESTSELLER', brand: 'EverestSteps', name: 'Handcrafted Leather Heels', now: 'Rs. 2,150', was: 'Rs. 3,500', off: '39% off', rating: '4.6', count: '3,412', priceNum: 2150, category: 'Footwear' },
+  { emoji: '🧥', bg: 'p-bg-5', badge: 'badge-sale', badgeText: '50% OFF', brand: 'HimalWool', name: 'Premium Pashmina Jacket', now: 'Rs. 4,500', was: 'Rs. 9,000', off: '50% off', rating: '4.9', count: '5,020', priceNum: 4500, category: 'Ethnic Wear' },
+  { emoji: '👛', bg: 'p-bg-6', badge: 'badge-new', badgeText: 'NEW', brand: 'DhakaStyle', name: 'Woven Dhaka Clutch Bag', now: 'Rs. 1,350', was: 'Rs. 2,000', off: '32% off', rating: '4.4', count: '788', priceNum: 1350, category: 'Bags' },
+  { emoji: '🧣', bg: 'p-bg-7', badge: 'badge-hot', badgeText: 'HOT', brand: 'SherpaKnit', name: 'Yak Wool Muffler Scarf', now: 'Rs. 890', was: 'Rs. 1,400', off: '36% off', rating: '4.6', count: '1,905', priceNum: 890, category: 'Beauty' },
+  { emoji: '🧢', bg: 'p-bg-8', badge: 'badge-best', badgeText: 'BESTSELLER', brand: 'NepalPeak', name: 'Trekking Cap Collection', now: 'Rs. 599', was: 'Rs. 999', off: '40% off', rating: '4.3', count: '4,110', priceNum: 599, category: 'Footwear' },
+  { emoji: '🧒', bg: 'p-bg-2', badge: 'badge-new', badgeText: 'NEW', brand: 'Little Himal', name: 'Kids Dhaka Kurta Set', now: 'Rs. 1,199', was: 'Rs. 1,799', off: '33% off', rating: '4.5', count: '1,150', priceNum: 1199, category: 'Kids' },
 ];
 
 const REELS = [
@@ -35,6 +36,82 @@ function formatRs(n) {
   return `Rs. ${Number(n).toLocaleString('en-NP')}`;
 }
 
+function getAdminContent() {
+  try {
+    return JSON.parse(localStorage.getItem('vastraa_admin_content') || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function getAllProducts() {
+  return [...cachedSellerProducts, ...PRODUCTS];
+}
+
+function getProductsForCategory(categoryName) {
+  const target = String(categoryName || '').trim().toLowerCase();
+  const products = getAllProducts();
+  const exact = products.filter((p) => String(p.category || '').toLowerCase() === target);
+  if (exact.length) return exact.slice(0, 6);
+
+  const contains = products.filter((p) => String(p.category || '').toLowerCase().includes(target));
+  if (contains.length) return contains.slice(0, 6);
+
+  if (target.includes('men')) {
+    return products.filter((p) => ['western', 'footwear'].includes(String(p.category || '').toLowerCase())).slice(0, 6);
+  }
+  if (target.includes('women')) {
+    return products.filter((p) => ['ethnic wear', 'bags', 'jewellery', 'beauty'].includes(String(p.category || '').toLowerCase())).slice(0, 6);
+  }
+  if (target.includes('kid')) {
+    return products.filter((p) => String(p.category || '').toLowerCase() === 'kids').slice(0, 6);
+  }
+
+  return products.slice(0, 6);
+}
+
+function applyAdminContent(content) {
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (!el || value === undefined || value === null) return;
+    el.innerHTML = value;
+  };
+
+  set('hero1Pill', content.hero1Pill);
+  set('hero1Title', content.hero1Title);
+  set('hero1Desc', content.hero1Desc);
+  set('hero1Primary', content.hero1Primary);
+  set('hero1Secondary', content.hero1Secondary);
+  set('hero2Pill', content.hero2Pill);
+  set('hero2Title', content.hero2Title);
+  set('hero2Desc', content.hero2Desc);
+  set('hero2Primary', content.hero2Primary);
+  set('hero2Secondary', content.hero2Secondary);
+  set('hero3Pill', content.hero3Pill);
+  set('hero3Title', content.hero3Title);
+  set('hero3Desc', content.hero3Desc);
+  set('hero3Primary', content.hero3Primary);
+  set('hero3Secondary', content.hero3Secondary);
+  set('banner1Tag', content.banner1Tag);
+  set('banner1Title', content.banner1Title);
+  set('banner1Desc', content.banner1Desc);
+  set('banner1Button', content.banner1Button);
+  set('banner2Tag', content.banner2Tag);
+  set('banner2Title', content.banner2Title);
+  set('banner2Desc', content.banner2Desc);
+  set('banner2Button', content.banner2Button);
+  set('salePill', content.salePill);
+  set('saleTitle', content.saleTitle);
+  set('saleDesc', content.saleDesc);
+  set('saleButton', content.saleButton);
+  set('promo1Headline', content.promo1Headline);
+  set('promo1Desc', content.promo1Desc);
+  set('promo1Button', content.promo1Button);
+  set('promo2Headline', content.promo2Headline);
+  set('promo2Desc', content.promo2Desc);
+  set('promo2Button', content.promo2Button);
+}
+
 function storeItemToProduct(item) {
   const off = item.priceWas && item.priceWas > item.price
     ? `${Math.round((1 - item.price / item.priceWas) * 100)}% off`
@@ -50,6 +127,7 @@ function storeItemToProduct(item) {
     badgeText: item.badgeText || 'NEW',
     brand: item.brand || item.shopName,
     name: item.name,
+    category: item.category || item.badge || 'Other',
     now: formatRs(item.price),
     was: item.priceWas ? formatRs(item.priceWas) : '',
     off,
@@ -83,22 +161,20 @@ let cachedSellerProducts = [];
 let cachedSellerReels = [];
 
 async function loadSellerCatalog() {
-  if (typeof fetchStoreProducts !== 'function') {
-    cachedSellerProducts = [];
-    cachedSellerReels = [];
-    return;
-  }
-  try {
-    const items = await fetchStoreProducts();
-    cachedSellerProducts = items.filter((i) => !i.isReel).map(storeItemToProduct);
-    cachedSellerReels = items.filter((i) => i.isReel).map((item, i) => storeItemToReel(item, i));
-  } catch (err) {
-    const fallback = typeof getLocalFallbackProducts === 'function' ? getLocalFallbackProducts() : [];
-    cachedSellerProducts = fallback.filter((i) => !i.isReel).map(storeItemToProduct);
-    cachedSellerReels = fallback.filter((i) => i.isReel).map((item, i) => storeItemToReel(item, i));
-    if (fallback.length) console.info('Showing seller items from offline fallback storage.');
-    else console.warn('No seller products. Run: cd backend && npm start — then open http://localhost:3000');
-  }
+  const fallback =
+    typeof fetchStoreProducts === 'function'
+      ? await fetchStoreProducts()
+      : (typeof getLocalFallbackProducts === 'function' ? getLocalFallbackProducts() : []);
+
+  cachedSellerProducts = fallback
+    .filter((i) => !i.isReel)
+    .map(storeItemToProduct);
+
+  cachedSellerReels = fallback
+    .filter((i) => i.isReel)
+    .map((item, i) => storeItemToReel(item, i));
+
+  console.log('Loaded products from localStorage');
 }
 
 function getSellerProducts() {
@@ -107,6 +183,133 @@ function getSellerProducts() {
 
 function getAllProducts() {
   return [...cachedSellerProducts, ...PRODUCTS];
+}
+
+function getProductsForCategory(categoryName) {
+  const target = String(categoryName || '').trim().toLowerCase();
+  const products = getAllProducts();
+  const exact = products.filter((p) => String(p.category || '').toLowerCase() === target);
+  if (exact.length) return exact.slice(0, 6);
+
+  const contains = products.filter((p) => String(p.category || '').toLowerCase().includes(target));
+  if (contains.length) return contains.slice(0, 6);
+
+  if (target.includes('men')) {
+    return products.filter((p) => ['western', 'footwear'].includes(String(p.category || '').toLowerCase())).slice(0, 6);
+  }
+  if (target.includes('women')) {
+    return products.filter((p) => ['ethnic wear', 'bags', 'jewellery', 'beauty'].includes(String(p.category || '').toLowerCase())).slice(0, 6);
+  }
+  if (target.includes('kid')) {
+    return products.filter((p) => String(p.category || '').toLowerCase() === 'kids').slice(0, 6);
+  }
+
+  return products.slice(0, 6);
+}
+
+function renderCategoryPreview(categoryName) {
+  const items = getProductsForCategory(categoryName);
+  if (!items.length) {
+    return `<div class="cat-hover-empty">No products available for ${escapeHtml(categoryName)}.</div>`;
+  }
+  return `
+    <h4>${escapeHtml(categoryName)} picks</h4>
+    <ul class="cat-hover-list">
+      ${items
+        .map(
+          (item) => `
+          <li>
+            <p class="cat-hover-item-name">${escapeHtml(item.name)}</p>
+            <p class="cat-hover-item-meta">${escapeHtml(item.brand)} · ${escapeHtml(item.now)}</p>
+          </li>
+        `
+        )
+        .join('')}
+    </ul>
+  `;
+}
+
+function initCategoryHover() {
+  const popup = document.getElementById('catHoverBox');
+  if (!popup) return;
+
+  let hideTimer = null;
+  const showPopup = (category) => {
+    popup.innerHTML = renderCategoryPreview(category);
+    popup.classList.add('show');
+  };
+  const hidePopup = () => {
+    popup.classList.remove('show');
+  };
+
+  document.querySelectorAll('.cat-card').forEach((card) => {
+    card.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimer);
+      const category = card.querySelector('.cat-name')?.textContent || '';
+      showPopup(category);
+    });
+    card.addEventListener('mouseleave', () => {
+      hideTimer = setTimeout(hidePopup, 150);
+    });
+  });
+
+  popup.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimer);
+  });
+  popup.addEventListener('mouseleave', hidePopup);
+}
+
+function getNavSuggestionPreview(categoryName) {
+  const category = String(categoryName || '').trim();
+  const suggestions = {
+    Men: ['T-shirts', 'Shirts', 'Pants', 'Jeans', 'Accessories'],
+    Women: ['Dresses', 'Tops', 'Sarees', 'Skirts', 'Bags'],
+    Kids: ['Tees', 'Sets', 'Shorts', 'Shoes', 'Backpacks'],
+    'Ethnic Wear': ['Kurtas', 'Saris', 'Dhaka', 'Shawls', 'Kurta Sets'],
+    Western: ['Jeans', 'Jackets', 'T-shirts', 'Shorts', 'Casuals'],
+    Footwear: ['Sneakers', 'Sandals', 'Heels', 'Boots', 'Slides'],
+    Accessories: ['Bags', 'Belts', 'Sunglasses', 'Jewelry', 'Watches'],
+    'Gen Z': ['Streetwear', 'Oversized Tees', 'Hoodies', 'Caps', 'Neon'],
+    Beauty: ['Skincare', 'Hair care', 'Perfume', 'Makeup', 'Body care'],
+    Sale: ['Under Rs. 999', 'Hot Deals', 'Clearance', 'Best Sellers', 'Flash Sale'],
+  };
+  const items = suggestions[category] || ['New arrivals', 'Top picks', 'Best sellers', 'Trending now', 'Shop all'];
+  return `
+    <h4>${category} suggestions</h4>
+    <ul class="nav-hover-list">
+      ${items.map((item) => `<li>${item}</li>`).join('')}
+    </ul>
+  `;
+}
+
+function initNavHover() {
+  const popup = document.getElementById('navHoverBox');
+  if (!popup) return;
+
+  let hideTimer = null;
+  const showPopup = (category) => {
+    popup.innerHTML = getNavSuggestionPreview(category);
+    popup.classList.add('show');
+  };
+  const hidePopup = () => {
+    popup.classList.remove('show');
+  };
+
+  document.querySelectorAll('.navbar .nav-item').forEach((button) => {
+    button.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimer);
+      const category = button.dataset.cat || button.textContent || '';
+      showPopup(category);
+    });
+    button.addEventListener('mouseleave', () => {
+      hideTimer = setTimeout(hidePopup, 150);
+    });
+  });
+
+  popup.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimer);
+  });
+  popup.addEventListener('mouseleave', hidePopup);
 }
 
 function getAllReels() {
@@ -130,10 +333,7 @@ function productMediaHtml(p) {
   if (p.imageUrl && (typeof hasValidImage === 'function' ? hasValidImage(p.imageUrl) : true)) {
     return `<img src="${p.imageUrl}" alt="${escapeHtml(p.name)}" class="prod-photo" />`;
   }
-  if (p.emoji) {
-    return `<div class="prod-img-placeholder ${p.bg}">${p.emoji}</div>`;
-  }
-  return `<div class="prod-img-placeholder ${p.bg}">👗</div>`;
+  return `<div class="prod-img-placeholder ${p.bg}"></div>`;
 }
 
 function reelMediaHtml(r) {
@@ -143,7 +343,7 @@ function reelMediaHtml(r) {
   if (r.imageUrl && (typeof hasValidImage === 'function' ? hasValidImage(r.imageUrl) : true)) {
     return `<img src="${r.imageUrl}" alt="" class="reel-photo" />`;
   }
-  return `<span class="reel-emoji-only">${r.emoji || '👗'}</span>`;
+  return `<div class="reel-placeholder"></div>`;
 }
 
 function prodImgClass(p) {
@@ -463,7 +663,7 @@ function initClickHandlers() {
     if (!btn) return;
     btn.setAttribute('data-add-cart', '');
     btn.dataset.name = card.querySelector('.genz-item-name')?.textContent?.trim() || 'Gen Z Item';
-    btn.dataset.brand = 'VASTAAR Gen Z';
+    btn.dataset.brand = 'VASTRAA Gen Z';
     btn.dataset.price = (card.querySelector('.genz-price')?.textContent || '').replace(/[^\d]/g, '') || '999';
     const imgBox = card.querySelector('.genz-card-img');
     const emojiNode = imgBox?.childNodes[imgBox.childNodes.length - 1];
@@ -472,16 +672,18 @@ function initClickHandlers() {
 }
 
 async function initAuthUI() {
-  if (typeof checkApiHealth === 'function') {
-    const online = await checkApiHealth();
-    if (!online && typeof showServerBanner === 'function') showServerBanner();
+  if (typeof loadCurrentUser === 'function') {
+    await loadCurrentUser();
+  } else if (typeof updateAuthHeader === 'function') {
+    updateAuthHeader();
   }
-  if (typeof loadCurrentUser === 'function') await loadCurrentUser();
-  else if (typeof updateAuthHeader === 'function') updateAuthHeader();
 
   const settingsBtn = document.getElementById('settingsBtn');
+
   if (settingsBtn && typeof isLoggedIn === 'function') {
-    settingsBtn.href = isLoggedIn() ? 'settings.html' : 'login.html?next=settings.html';
+    settingsBtn.href = isLoggedIn()
+      ? 'settings.html'
+      : 'login.html?next=settings.html';
   }
 }
 
@@ -494,7 +696,7 @@ async function refreshCatalog() {
     if (!btn) return;
     btn.setAttribute('data-add-cart', '');
     btn.dataset.name = card.querySelector('.genz-item-name')?.textContent?.trim() || 'Gen Z Item';
-    btn.dataset.brand = 'VASTAAR Gen Z';
+    btn.dataset.brand = 'VASTRAA Gen Z';
     btn.dataset.price = (card.querySelector('.genz-price')?.textContent || '').replace(/[^\d]/g, '') || '999';
     const imgBox = card.querySelector('.genz-card-img');
     const emojiNode = imgBox?.childNodes[imgBox.childNodes.length - 1];
@@ -503,6 +705,7 @@ async function refreshCatalog() {
 }
 
 async function init() {
+  applyAdminContent(getAdminContent());
   await initAuthUI();
   await updateCartBadge();
   await refreshCatalog();
@@ -512,6 +715,8 @@ async function init() {
   initBackToTop();
   initFadeIn();
   initClickHandlers();
+  initCategoryHover();
+  initNavHover();
 }
 
 if (document.readyState === 'loading') {

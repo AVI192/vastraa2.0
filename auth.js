@@ -1,11 +1,32 @@
 /* ======================================================
-   VASTAAR – Auth & API (MongoDB backend)
+   VASTRAA – Auth & API (MongoDB backend)
    Run: cd backend && npm install && npm start
    Open: http://localhost:3000
 ====================================================== */
 
-const ADMIN_EMAIL = 'admin@vastaar.com';
-const GUEST_CART_KEY = 'vastaar_guest_cart';
+const ADMIN_EMAIL = 'admin@vastraa.com';
+const ADMIN_PASSWORD = 'admin123';
+const GUEST_CART_KEY = 'vastraa_guest_cart';
+const LOCAL_USER_KEY = 'vastraa_users';
+const LOCAL_SESSION_KEY = 'vastraa_user_session';
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function isAdminEmail(email) {
+  return normalizeEmail(email) === ADMIN_EMAIL.toLowerCase();
+}
+
+function createAdminUser() {
+  return {
+    id: 'admin',
+    name: 'Administrator',
+    email: ADMIN_EMAIL,
+    role: 'admin',
+    isSeller: false,
+  };
+}
 
 function getApiBase() {
   if (window.location.port === '3000') return '/api';
@@ -19,12 +40,18 @@ let authToastTimer = null;
 let apiOnline = false;
 
 async function api(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      ...options,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    apiOnline = false;
+    throw new Error('Server offline');
+  }
 
   let data = {};
   try {
@@ -65,12 +92,67 @@ function showServerBanner() {
   document.body.prepend(bar);
 }
 
+function getLocalUsers() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_USER_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalUsers(users) {
+  localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(users));
+}
+
+function getAdminContent() {
+  try {
+    return JSON.parse(localStorage.getItem('vastraa_admin_content') || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveAdminContent(content) {
+  localStorage.setItem('vastraa_admin_content', JSON.stringify(content));
+}
+
+function getLocalUserSession() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_SESSION_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function saveLocalUserSession(user) {
+  localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(user));
+}
+
+function getLocalStoreItems() {
+  try {
+    return JSON.parse(localStorage.getItem('vastraa_store_items') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalStoreItems(items) {
+  localStorage.setItem('vastraa_store_items', JSON.stringify(items));
+}
+
+function clearLocalUserSession() {
+  localStorage.removeItem(LOCAL_SESSION_KEY);
+}
+
 async function loadCurrentUser() {
   try {
     const data = await api('/auth/me');
     currentUser = data.user || null;
   } catch {
-    currentUser = null;
+    currentUser = getLocalUserSession();
+    if (currentUser && isAdminEmail(currentUser.email)) {
+      currentUser.role = 'admin';
+    }
   }
   updateAuthHeader();
   return currentUser;
@@ -85,18 +167,43 @@ function isLoggedIn() {
 }
 
 async function register(data) {
-  const res = await api('/auth/register', {
-    method: 'POST',
-    body: {
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      password: data.password,
-    },
-  });
-  currentUser = res.user;
-  updateAuthHeader();
-  return { ok: true, user: res.user };
+  try {
+    const res = await api('/auth/register', {
+      method: 'POST',
+      body: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+      },
+    });
+    currentUser = res.user;
+    updateAuthHeader();
+    return { ok: true, user: res.user };
+  } catch (err) {
+    if (!apiOnline) {
+      const users = getLocalUsers();
+      if (users.some((user) => user.email.toLowerCase() === data.email.toLowerCase())) {
+        return { ok: false, message: 'Email already registered.' };
+      }
+      const newUser = {
+        id: Date.now().toString(),
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        role: 'customer',
+        isSeller: false,
+      };
+      users.push(newUser);
+      saveLocalUsers(users);
+      saveLocalUserSession(newUser);
+      currentUser = newUser;
+      updateAuthHeader();
+      return { ok: true, user: newUser };
+    }
+    return { ok: false, message: err.message || 'Registration failed.' };
+  }
 }
 
 async function login(email, password) {
@@ -109,7 +216,29 @@ async function login(email, password) {
     updateAuthHeader();
     return { ok: true, user: res.user };
   } catch (err) {
-    return { ok: false, message: err.message };
+    if (!apiOnline) {
+      if (isAdminEmail(email) && password === ADMIN_PASSWORD) {
+        const adminUser = createAdminUser();
+        currentUser = adminUser;
+        saveLocalUserSession(adminUser);
+        updateAuthHeader();
+        return { ok: true, user: adminUser };
+      }
+      const users = getLocalUsers();
+      const user = users.find(
+        (user) =>
+          normalizeEmail(user.email) === normalizeEmail(email) &&
+          user.password === password
+      );
+      if (user) {
+        currentUser = user;
+        saveLocalUserSession(user);
+        updateAuthHeader();
+        return { ok: true, user };
+      }
+      return { ok: false, message: 'Invalid email or password.' };
+    }
+    return { ok: false, message: err.message || 'Login failed.' };
   }
 }
 
@@ -120,6 +249,7 @@ async function clearSession() {
     /* ignore */
   }
   currentUser = null;
+  clearLocalUserSession();
 }
 
 async function logout() {
@@ -138,6 +268,18 @@ async function updateUser(updates) {
     currentUser = res.user;
     return { ok: true, user: res.user };
   } catch (err) {
+    if (!apiOnline && currentUser) {
+      const users = getLocalUsers();
+      const idx = users.findIndex((user) => user.email.toLowerCase() === currentUser.email.toLowerCase());
+      if (idx >= 0) {
+        users[idx] = { ...users[idx], ...updates };
+        currentUser = { ...currentUser, ...updates };
+        users[idx] = currentUser;
+        saveLocalUsers(users);
+        saveLocalUserSession(currentUser);
+        return { ok: true, user: currentUser };
+      }
+    }
     return { ok: false, message: err.message };
   }
 }
@@ -148,12 +290,32 @@ async function registerSeller(sellerData) {
     currentUser = res.user;
     return { ok: true, user: res.user };
   } catch (err) {
+    if (!apiOnline && currentUser) {
+      const users = getLocalUsers();
+      const idx = users.findIndex((user) => normalizeEmail(user.email) === normalizeEmail(currentUser.email));
+      if (idx >= 0) {
+        const updatedUser = {
+          ...currentUser,
+          isSeller: true,
+          seller: {
+            ...sellerData,
+            status: 'pending',
+            appliedAt: new Date().toISOString(),
+          },
+        };
+        users[idx] = updatedUser;
+        currentUser = updatedUser;
+        saveLocalUsers(users);
+        saveLocalUserSession(currentUser);
+        return { ok: true, user: updatedUser };
+      }
+    }
     return { ok: false, message: err.message };
   }
 }
 
 function isAdmin(user) {
-  return user && (user.role === 'admin' || user.email === ADMIN_EMAIL);
+  return user && (user.role === 'admin' || isAdminEmail(user.email));
 }
 
 async function ensureAdminAccount() {
@@ -161,13 +323,31 @@ async function ensureAdminAccount() {
 }
 
 async function getPendingSellers() {
-  const res = await api('/admin/sellers/pending');
-  return res.sellers;
+  try {
+    const res = await api('/admin/sellers/pending');
+    return res.sellers;
+  } catch {
+    if (!apiOnline) {
+      return getLocalUsers().filter(
+        (user) => user.isSeller && user.seller?.status === 'pending'
+      );
+    }
+    return [];
+  }
 }
 
 async function getApprovedSellers() {
-  const res = await api('/admin/sellers/approved');
-  return res.sellers;
+  try {
+    const res = await api('/admin/sellers/approved');
+    return res.sellers;
+  } catch {
+    if (!apiOnline) {
+      return getLocalUsers().filter(
+        (user) => user.isSeller && user.seller?.status === 'approved'
+      );
+    }
+    return [];
+  }
 }
 
 async function approveSeller(email) {
@@ -175,6 +355,15 @@ async function approveSeller(email) {
     await api(`/admin/sellers/${encodeURIComponent(email)}/approve`, { method: 'POST' });
     return { ok: true };
   } catch (err) {
+    if (!apiOnline) {
+      const users = getLocalUsers();
+      const idx = users.findIndex((user) => normalizeEmail(user.email) === normalizeEmail(email));
+      if (idx >= 0 && users[idx].seller) {
+        users[idx].seller.status = 'approved';
+        saveLocalUsers(users);
+        return { ok: true };
+      }
+    }
     return { ok: false, message: err.message };
   }
 }
@@ -184,6 +373,15 @@ async function rejectSeller(email) {
     await api(`/admin/sellers/${encodeURIComponent(email)}/reject`, { method: 'POST' });
     return { ok: true };
   } catch (err) {
+    if (!apiOnline) {
+      const users = getLocalUsers();
+      const idx = users.findIndex((user) => normalizeEmail(user.email) === normalizeEmail(email));
+      if (idx >= 0 && users[idx].seller) {
+        users[idx].seller.status = 'rejected';
+        saveLocalUsers(users);
+        return { ok: true };
+      }
+    }
     return { ok: false, message: err.message };
   }
 }
@@ -232,8 +430,8 @@ function compressImageFile(file, maxWidth = 720, quality = 0.82) {
 
 function getLocalFallbackProducts() {
   try {
-    const items = JSON.parse(localStorage.getItem('vastaar_store_items') || '[]');
-    const users = JSON.parse(localStorage.getItem('vastaar_users') || '[]');
+    const items = JSON.parse(localStorage.getItem('vastraa_store_items') || '[]');
+    const users = JSON.parse(localStorage.getItem('vastraa_users') || '[]');
     const approved = new Set(
       users.filter((u) => u.isSeller && u.seller?.status === 'approved').map((u) => u.email)
     );
@@ -261,8 +459,17 @@ async function fetchStoreProducts() {
 }
 
 async function fetchSellerProducts() {
-  const res = await api('/products/mine');
-  return res.products || [];
+  try {
+    const res = await api('/products/mine');
+    return res.products || [];
+  } catch {
+    if (!apiOnline && isLoggedIn()) {
+      const user = getCurrentUser();
+      const items = getLocalStoreItems();
+      return items.filter((item) => item.sellerEmail === user?.email);
+    }
+    return [];
+  }
 }
 
 async function addStoreItem(item) {
@@ -285,6 +492,32 @@ async function addStoreItem(item) {
     });
     return { ok: true, item: res.item };
   } catch (err) {
+    if (!apiOnline && isLoggedIn()) {
+      const user = getCurrentUser();
+      if (!user?.isSeller) {
+        return { ok: false, message: 'Only sellers can add items.' };
+      }
+      const items = getLocalStoreItems();
+      const newItem = {
+        id: item.id || Date.now().toString(),
+        sellerEmail: user.email,
+        name: item.name,
+        brand: item.brand,
+        price: Number(item.price) || 0,
+        priceWas: item.priceWas ? Number(item.priceWas) : null,
+        emoji: item.emoji || '',
+        imageUrl: item.imageUrl || '',
+        videoUrl: item.videoUrl || '',
+        isReel: !!item.isReel,
+        badge: item.badge || 'badge-new',
+        badgeText: item.badgeText || 'NEW',
+        category: item.category || 'uncategorized',
+        createdAt: new Date().toISOString(),
+      };
+      items.push(newItem);
+      saveLocalStoreItems(items);
+      return { ok: true, item: newItem };
+    }
     return { ok: false, message: err.message };
   }
 }
@@ -298,7 +531,9 @@ async function getSellerItems() {
   try {
     return await fetchSellerProducts();
   } catch {
-    return [];
+    const user = getCurrentUser();
+    const items = getLocalStoreItems();
+    return items.filter((item) => item.sellerEmail === user?.email);
   }
 }
 
@@ -307,6 +542,11 @@ async function deleteStoreItem(id) {
     await api(`/products/${id}`, { method: 'DELETE' });
     return { ok: true };
   } catch (err) {
+    if (!apiOnline) {
+      const items = getLocalStoreItems().filter((item) => item.id !== id);
+      saveLocalStoreItems(items);
+      return { ok: true };
+    }
     return { ok: false, message: err.message };
   }
 }
