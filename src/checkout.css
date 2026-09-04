@@ -123,6 +123,8 @@
 .seller-success { text-align: center; }
 .seller-success h2 { margin-right: 0; }
 .seller-success > p:not(.eyebrow) { max-width: 500px; margin: 0 auto 28px; color: var(--gray-dark); line-height: 1.6; }
+.seller-status-approved { background: #2e7d32; }
+.seller-status-rejected { background: #b42318; }
 
 @media (max-width: 640px) {
   .seller-modal { width: 100%; max-height: calc(100vh - 24px); padding: 32px 20px 24px; border-radius: 14px; }

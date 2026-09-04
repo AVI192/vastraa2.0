@@ -962,6 +962,12 @@ function SellerRegistration({ onClose, onSuccess }) {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const verificationStatus = submitted?.seller?.status || "pending";
+  const statusLabel = {
+    pending: "Pending verification",
+    approved: "Seller verification approved",
+    rejected: "Seller verification rejected",
+  }[verificationStatus] || "Pending verification";
   const update = (field, value) =>
     setForm((current) => ({ ...current, [field]: value }));
   const submit = async (event) => {
@@ -1007,10 +1013,14 @@ function SellerRegistration({ onClose, onSuccess }) {
         </button>
         {submitted ? (
           <div className="seller-success">
-            <div className="success-icon"><i className="fa fa-check" /></div>
-            <p className="eyebrow">REGISTRATION SUBMITTED</p>
-            <h2 id="seller-registration-title">Your seller registration has been submitted.</h2>
-            <p>Your store application is currently pending verification. We will review your details before your store goes live.</p>
+            <div className={`success-icon seller-status-${verificationStatus}`}><i className={`fa ${verificationStatus === "rejected" ? "fa-xmark" : "fa-check"}`} /></div>
+            <p className="eyebrow">SELLER STATUS</p>
+            <h2 id="seller-registration-title">{statusLabel}</h2>
+            <p>
+              {verificationStatus === "pending" && "Your seller registration has been submitted. We will review your details before your store goes live."}
+              {verificationStatus === "approved" && "Your seller registration has been approved. Store activation will follow in a later marketplace phase."}
+              {verificationStatus === "rejected" && (submitted.seller.verification?.rejectionReason || "Your seller registration was not approved.")}
+            </p>
             <button className="checkout-btn" onClick={onSuccess}>Continue shopping <i className="fa fa-arrow-right" /></button>
           </div>
         ) : (

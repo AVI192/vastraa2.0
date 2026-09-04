@@ -104,6 +104,7 @@ app.post('/api/sellers', async (req, res, next) => {
       id: `seller-${randomUUID()}`,
       ...seller,
       status: 'pending',
+      verification: { submittedAt: createdAt },
       createdAt
     };
     const storeRecord = {
@@ -118,6 +119,39 @@ app.post('/api/sellers', async (req, res, next) => {
     data.stores.push(storeRecord);
     await writeData(data);
     res.status(201).json({ seller: sellerRecord, store: storeRecord });
+  } catch (error) { next(error); }
+});
+app.patch('/api/sellers/:id/verification', async (req, res, next) => {
+  try {
+    const requestedStatus = String(req.body?.status || '').trim().toLowerCase();
+    const reason = String(req.body?.reason || '').trim();
+    const allowedStatuses = ['approved', 'rejected'];
+    if (!allowedStatuses.includes(requestedStatus)) {
+      return res.status(400).json({ message: 'Verification status must be approved or rejected.' });
+    }
+    if (requestedStatus === 'rejected' && reason.length < 10) {
+      return res.status(400).json({ message: 'A meaningful rejection reason is required.' });
+    }
+
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.id);
+    if (!seller) return res.status(404).json({ message: 'Seller not found.' });
+    if (seller.status !== 'pending') {
+      return res.status(409).json({ message: 'Only pending sellers can be reviewed.' });
+    }
+
+    const reviewedAt = new Date().toISOString();
+    seller.status = requestedStatus;
+    seller.verification = {
+      ...(seller.verification || {}),
+      reviewedAt,
+      reviewedBy: String(req.body?.reviewedBy || 'internal-reviewer').trim()
+    };
+    if (requestedStatus === 'rejected') seller.verification.rejectionReason = reason;
+    else delete seller.verification.rejectionReason;
+
+    await writeData(data);
+    res.json({ seller });
   } catch (error) { next(error); }
 });
 app.get('/api/sellers', async (_req, res, next) => {

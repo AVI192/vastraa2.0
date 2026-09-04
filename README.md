@@ -46,3 +46,13 @@ POST /api/sellers
 ```
 
 The request accepts nested `seller` and `store` objects, creates linked records with `pending` status, and rejects duplicate seller emails with HTTP `409`.
+
+## Phase 2.3 seller verification
+
+Seller status remains the single verification source of truth: `pending`, `approved`, or `rejected`. The internal review endpoint is:
+
+```text
+PATCH /api/sellers/:id/verification
+```
+
+It accepts `approved` or `rejected`; rejected reviews require a meaningful `reason`. This endpoint is intentionally internal-only until authentication and authorization are implemented. Store status remains unchanged in this phase.
