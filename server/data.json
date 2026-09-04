@@ -1,0 +1,231 @@
+{
+  "products": [],
+  "orders": [
+    {
+      "id": "VST-MTN4FYV9",
+      "customer": {
+        "name": "Aviraj Yadav",
+        "email": "yadavaviraj2023@gmail.com",
+        "address": "new hostel symbiosis hospital\nsymbiosis hospital"
+      },
+      "items": [
+        {
+          "id": "reel-Men's Daura Suruwal - Modern Fit",
+          "name": "Men's Daura Suruwal - Modern Fit",
+          "price": 2200,
+          "quantity": 5
+        }
+      ],
+      "createdAt": "2026-09-04T15:41:23.397Z",
+      "status": "confirmed"
+    },
+    {
+      "id": "VST-MTN4NYAL",
+      "customer": {
+        "city": "Kathmandu",
+        "name": "Audit Buyer",
+        "phone": "9812345678",
+        "postalCode": "44600",
+        "email": "audit@example.com",
+        "address": "Main Street"
+      },
+      "items": [
+        {
+          "price": 1899,
+          "quantity": 2,
+          "name": "Traditional Dhaka Kurta",
+          "id": "p1"
+        }
+      ],
+      "paymentMethod": "Cash on Delivery",
+      "promoCode": "VASTAAR20",
+      "summary": {
+        "subtotal": 3798,
+        "delivery": 0,
+        "discount": 760,
+        "total": 3038
+      },
+      "createdAt": "2026-09-04T15:47:35.901Z",
+      "status": "confirmed"
+    },
+    {
+      "id": "VST-MTN4WNCN",
+      "customer": {
+        "name": "Aviraj Yadav",
+        "email": "yadavaviraj2023@gmail.com",
+        "phone": "9845696549846",
+        "address": "new hostel symbiosis hospital\nsymbiosis hospital",
+        "city": "pune",
+        "postalCode": "412115"
+      },
+      "items": [
+        {
+          "id": "p2",
+          "name": "Classic Daura Suruwal Set",
+          "price": 2499,
+          "quantity": 1
+        }
+      ],
+      "paymentMethod": "Cash on Delivery",
+      "promoCode": "",
+      "summary": {
+        "subtotal": 2499,
+        "delivery": 0,
+        "discount": 0,
+        "total": 2499
+      },
+      "createdAt": "2026-09-04T15:54:21.623Z",
+      "status": "confirmed"
+    },
+    {
+      "id": "VST-MTN4YKQ0",
+      "customer": {
+        "name": "Checkout Tester",
+        "email": "checkout@example.com",
+        "phone": "9812345678",
+        "address": "VASTAAR Street, Kathmandu",
+        "city": "Kathmandu",
+        "postalCode": "44600"
+      },
+      "items": [
+        {
+          "id": "p3",
+          "name": "Silver Filigree Necklace",
+          "price": 3200,
+          "quantity": 1
+        },
+        {
+          "id": "p1",
+          "name": "Traditional Dhaka Kurta",
+          "price": 1899,
+          "quantity": 3
+        }
+      ],
+      "paymentMethod": "Cash on Delivery",
+      "promoCode": "",
+      "summary": {
+        "subtotal": 8897,
+        "delivery": 0,
+        "discount": 0,
+        "total": 8897
+      },
+      "createdAt": "2026-09-04T15:55:51.528Z",
+      "status": "confirmed"
+    },
+    {
+      "id": "VST-MTN50RG8",
+      "customer": {
+        "name": "Aviraj Yadav",
+        "email": "yadavaviraj2023@gmail.com",
+        "phone": "6262562562",
+        "address": "new hostel symbiosis hospital\nsymbiosis hospital",
+        "city": "pune",
+        "postalCode": "412115"
+      },
+      "items": [
+        {
+          "id": "p3",
+          "name": "Silver Filigree Necklace",
+          "price": 3200,
+          "quantity": 1
+        },
+        {
+          "id": "p2",
+          "name": "Classic Daura Suruwal Set",
+          "price": 2499,
+          "quantity": 1
+        }
+      ],
+      "paymentMethod": "Cash on Delivery",
+      "promoCode": "",
+      "summary": {
+        "subtotal": 5699,
+        "delivery": 0,
+        "discount": 0,
+        "total": 5699
+      },
+      "createdAt": "2026-09-04T15:57:33.560Z",
+      "status": "confirmed"
+    },
+    {
+      "id": "VST-MTN55BPP",
+      "customer": {
+        "name": "QA Buyer",
+        "email": "qa@example.com",
+        "phone": "9812345678",
+        "address": "Test address",
+        "city": "Kathmandu",
+        "postalCode": "44600"
+      },
+      "items": [
+        {
+          "id": "p1",
+          "name": "Traditional Dhaka Kurta",
+          "price": 1899,
+          "quantity": 2
+        }
+      ],
+      "paymentMethod": "Cash on Delivery",
+      "promoCode": "VASTAAR20",
+      "summary": {
+        "subtotal": 3798,
+        "delivery": 0,
+        "discount": 760,
+        "total": 3038
+      },
+      "createdAt": "2026-09-04T16:01:06.445Z",
+      "status": "confirmed"
+    },
+    {
+      "id": "VST-MTN87VKH",
+      "customer": {
+        "name": "Aviraj Yadav",
+        "email": "yadavaviraj2023@gmail.com",
+        "phone": "4196461414645",
+        "address": "new hostel symbiosis hospital\nsymbiosis hospital",
+        "city": "pune",
+        "postalCode": "412115"
+      },
+      "items": [
+        {
+          "id": "arrival-UV400 Sunglasses",
+          "name": "UV400 Sunglasses",
+          "price": 1250,
+          "quantity": 1
+        },
+        {
+          "id": "arrival-Ayurvedic Lip Tint",
+          "name": "Ayurvedic Lip Tint",
+          "price": 699,
+          "quantity": 1
+        },
+        {
+          "id": "arrival-Wool Blend Socks",
+          "name": "Wool Blend Socks",
+          "price": 399,
+          "quantity": 1
+        },
+        {
+          "id": "p10",
+          "name": "Everyday Western Overshirt",
+          "price": 1799,
+          "quantity": 1
+        }
+      ],
+      "paymentMethod": "Cash on Delivery",
+      "promoCode": "",
+      "summary": {
+        "subtotal": 4147,
+        "delivery": 0,
+        "discount": 0,
+        "total": 4147
+      },
+      "createdAt": "2026-09-04T17:27:04.337Z",
+      "status": "confirmed"
+    }
+  ],
+  "subscribers": [
+    "audit-newsletter@example.com",
+    "qa-newsletter@example.com"
+  ]
+}
