@@ -168,6 +168,34 @@ app.get('/api/sellers/:id', async (req, res, next) => {
     res.json({ seller });
   } catch (error) { next(error); }
 });
+app.get('/api/sellers/:id/dashboard', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.id);
+    if (!seller) return res.status(404).json({ message: 'Seller not found.' });
+    const store = data.stores.find((item) => item.sellerId === seller.id) || null;
+    const sellerProducts = data.products.filter((item) => item.sellerId === seller.id);
+    const sellerInventory = data.inventory.filter((item) => item.storeId === store?.id || sellerProducts.some((product) => product.id === item.productId));
+    const sellerOrders = data.orders.filter((order) => order.items?.some((item) => item.sellerId === seller.id || item.storeId === store?.id));
+    res.json({
+      seller: {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        phone: seller.phone,
+        status: seller.status,
+        verification: seller.verification || {},
+        createdAt: seller.createdAt
+      },
+      store,
+      stats: {
+        products: sellerProducts.length,
+        inventory: sellerInventory.length,
+        orders: sellerOrders.length
+      }
+    });
+  } catch (error) { next(error); }
+});
 app.get('/api/stores', async (req, res, next) => {
   try {
     const data = await readStoredData();

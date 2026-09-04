@@ -86,6 +86,7 @@ function App() {
   const [checkout, setCheckout] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
   const [sellerRegistration, setSellerRegistration] = useState(false);
+  const [sellerDashboard, setSellerDashboard] = useState(false);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -283,6 +284,7 @@ function App() {
       <Footer
         onSubscribe={showToast}
         onBecomeSeller={() => setSellerRegistration(true)}
+        onOpenDashboard={() => setSellerDashboard(true)}
       />
       <button
         className="back-top"
@@ -326,6 +328,9 @@ function App() {
           onClose={() => setSellerRegistration(false)}
           onSuccess={() => setSellerRegistration(false)}
         />
+      )}
+      {sellerDashboard && (
+        <SellerDashboard onClose={() => setSellerDashboard(false)} />
       )}
       {toast && (
         <div className="toast show">
@@ -834,7 +839,7 @@ function Brands() {
     </section>
   );
 }
-function Footer({ onSubscribe, onBecomeSeller }) {
+function Footer({ onSubscribe, onBecomeSeller, onOpenDashboard }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
   const subscribe = async (event) => {
@@ -909,6 +914,7 @@ function Footer({ onSubscribe, onBecomeSeller }) {
             "Company",
             "About VASTAAR",
             "Sell on VASTAAR",
+            "Seller Dashboard",
             "Careers",
             "Privacy Policy",
             "Terms of Use",
@@ -921,6 +927,10 @@ function Footer({ onSubscribe, onBecomeSeller }) {
                 <li key={link}>
                   {link === "Sell on VASTAAR" ? (
                     <button className="footer-link-button" onClick={onBecomeSeller}>
+                      {link}
+                    </button>
+                  ) : link === "Seller Dashboard" ? (
+                    <button className="footer-link-button" onClick={onOpenDashboard}>
                       {link}
                     </button>
                   ) : (
@@ -1057,6 +1067,83 @@ function SellerRegistration({ onClose, onSuccess }) {
       </div>
     </div>
   );
+}
+
+function SellerDashboard({ onClose }) {
+  const [sellers, setSellers] = useState([]);
+  const [sellerId, setSellerId] = useState("");
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch(`${API}/sellers`)
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.message || "Unable to load sellers.");
+        return body.sellers;
+      })
+      .then((items) => {
+        setSellers(items);
+        if (items[0]) setSellerId(items[0].id);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!sellerId) {
+      setDashboard(null);
+      return undefined;
+    }
+    setError("");
+    setLoading(true);
+    fetch(`${API}/sellers/${encodeURIComponent(sellerId)}/dashboard`)
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.message || "Unable to load dashboard.");
+        return body;
+      })
+      .then(setDashboard)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+    return undefined;
+  }, [sellerId]);
+
+  const status = dashboard?.seller?.status || "pending";
+  const statusLabel = { pending: "Pending Review", approved: "Approved", rejected: "Rejected" }[status] || status;
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="dashboard-modal" role="dialog" aria-modal="true" aria-labelledby="dashboard-title" onClick={(event) => event.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close seller dashboard"><i className="fa fa-xmark" /></button>
+        <p className="eyebrow">LOCAL DEMO ACCESS</p>
+        <h2 id="dashboard-title">VASTAAR Seller Dashboard</h2>
+        <p className="dashboard-notice">Authentication is not implemented yet. Select a registered seller for local dashboard preview.</p>
+        {loading && !sellers.length ? <div className="dashboard-state">Loading seller accounts...</div> : error ? <div className="dashboard-state dashboard-error">{error}</div> : !sellers.length ? <div className="dashboard-state"><i className="fa fa-store" /><strong>No seller accounts yet</strong><span>Complete seller registration before opening a dashboard.</span></div> : (
+          <>
+            <label className="dashboard-select-label">Demo seller<select value={sellerId} onChange={(event) => setSellerId(event.target.value)}>{sellers.map((seller) => <option value={seller.id} key={seller.id}>{seller.name} - {seller.status}</option>)}</select></label>
+            {loading ? <div className="dashboard-state">Loading dashboard...</div> : dashboard && <>
+              <div className="dashboard-welcome"><span>Welcome, {dashboard.seller.name}</span><small>{dashboard.store?.name || "Store not created"}</small></div>
+              <div className="dashboard-grid">
+                <DashboardCard icon="fa-shield-halved" label="Verification" value={statusLabel} tone={status} detail={status === "rejected" ? dashboard.seller.verification?.rejectionReason : status === "pending" ? "Your application is under review." : "Seller verification complete."} />
+                <DashboardCard icon="fa-box" label="Products" value={dashboard.stats.products} detail="Available in later phase" />
+                <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory || "Coming soon"} detail="Inventory management is not active yet." />
+                <DashboardCard icon="fa-receipt" label="Orders" value={dashboard.stats.orders} detail="Seller orders arrive in a later phase." />
+                <DashboardCard icon="fa-store" label="Store status" value={dashboard.store?.status || "Not available"} detail={dashboard.store?.city || "Store profile coming soon."} />
+                <DashboardCard icon="fa-id-card" label="Seller ID" value={dashboard.seller.id} detail={`Registered ${new Date(dashboard.seller.createdAt).toLocaleDateString("en-NP")}`} />
+              </div>
+              <div className="dashboard-actions"><strong>Quick actions</strong><div><button disabled>Manage Store <small>Next phase</small></button><button disabled>Add Product <small>Next phase</small></button><button disabled>Manage Inventory <small>Next phase</small></button><button disabled>View Orders <small>Next phase</small></button></div></div>
+            </>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DashboardCard({ icon, label, value, detail, tone = "" }) {
+  return <article className={`dashboard-card ${tone}`}><i className={`fa ${icon}`} /><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>;
 }
 
 function CartDrawer({ cart, subtotal, onClose, onChange, onCheckout }) {

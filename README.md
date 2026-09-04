@@ -56,3 +56,15 @@ PATCH /api/sellers/:id/verification
 ```
 
 It accepts `approved` or `rejected`; rejected reviews require a meaningful `reason`. This endpoint is intentionally internal-only until authentication and authorization are implemented. Store status remains unchanged in this phase.
+
+## Phase 2.4 seller dashboard
+
+The seller dashboard is available from the footer through `Seller Dashboard`. It uses a clearly labeled local demo seller selector because authentication and seller sessions are not implemented yet.
+
+Dashboard endpoint:
+
+```text
+GET /api/sellers/:id/dashboard
+```
+
+The dashboard exposes only seller-safe identity, linked store information, verification status, and truthful product/inventory/order counts. Product management, inventory management, seller orders, and store profile actions remain disabled for later phases.
