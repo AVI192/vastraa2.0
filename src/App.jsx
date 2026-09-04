@@ -85,6 +85,7 @@ function App() {
   const [drawer, setDrawer] = useState(false);
   const [checkout, setCheckout] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
+  const [sellerRegistration, setSellerRegistration] = useState(false);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -279,7 +280,10 @@ function App() {
         }
       />
       <Brands />
-      <Footer onSubscribe={showToast} />
+      <Footer
+        onSubscribe={showToast}
+        onBecomeSeller={() => setSellerRegistration(true)}
+      />
       <button
         className="back-top"
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -315,6 +319,12 @@ function App() {
         <OrderSuccess
           order={orderSuccess}
           onContinue={() => setOrderSuccess(null)}
+        />
+      )}
+      {sellerRegistration && (
+        <SellerRegistration
+          onClose={() => setSellerRegistration(false)}
+          onSuccess={() => setSellerRegistration(false)}
         />
       )}
       {toast && (
@@ -824,7 +834,7 @@ function Brands() {
     </section>
   );
 }
-function Footer({ onSubscribe }) {
+function Footer({ onSubscribe, onBecomeSeller }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
   const subscribe = async (event) => {
@@ -909,7 +919,13 @@ function Footer({ onSubscribe }) {
             <ul className="footer-links">
               {links.map((link) => (
                 <li key={link}>
-                  <a href="#products">{link}</a>
+                  {link === "Sell on VASTAAR" ? (
+                    <button className="footer-link-button" onClick={onBecomeSeller}>
+                      {link}
+                    </button>
+                  ) : (
+                    <a href="#products">{link}</a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -931,6 +947,108 @@ function Footer({ onSubscribe }) {
     </footer>
   );
 }
+
+function SellerRegistration({ onClose, onSuccess }) {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    storeName: "",
+    description: "",
+    city: "",
+    address: "",
+    storePhone: "",
+  });
+  const [error, setError] = useState("");
+  const [submitted, setSubmitted] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const update = (field, value) =>
+    setForm((current) => ({ ...current, [field]: value }));
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      const response = await fetch(`${API}/sellers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          seller: { name: form.name, email: form.email, phone: form.phone },
+          store: {
+            name: form.storeName,
+            description: form.description,
+            city: form.city,
+            address: form.address,
+            phone: form.storePhone,
+          },
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message);
+      setSubmitted(body);
+    } catch (err) {
+      setError(err.message || "Unable to submit registration.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="seller-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="seller-registration-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button className="modal-close" onClick={onClose} aria-label="Close seller registration">
+          <i className="fa fa-xmark" />
+        </button>
+        {submitted ? (
+          <div className="seller-success">
+            <div className="success-icon"><i className="fa fa-check" /></div>
+            <p className="eyebrow">REGISTRATION SUBMITTED</p>
+            <h2 id="seller-registration-title">Your seller registration has been submitted.</h2>
+            <p>Your store application is currently pending verification. We will review your details before your store goes live.</p>
+            <button className="checkout-btn" onClick={onSuccess}>Continue shopping <i className="fa fa-arrow-right" /></button>
+          </div>
+        ) : (
+          <>
+            <p className="eyebrow">JOIN THE MARKETPLACE</p>
+            <h2 id="seller-registration-title">Become a VASTAAR seller</h2>
+            <p className="seller-intro">Bring your local fashion store to customers across Nepal.</p>
+            <form onSubmit={submit}>
+              <div className="seller-form-section">
+                <h3>Seller information</h3>
+                <div className="seller-fields">
+                  <label>Full name<input value={form.name} onChange={(event) => update("name", event.target.value)} required /></label>
+                  <label>Email<input type="email" value={form.email} onChange={(event) => update("email", event.target.value)} required /></label>
+                  <label>Phone<input type="tel" inputMode="tel" minLength={7} maxLength={20} value={form.phone} onChange={(event) => update("phone", event.target.value)} required /></label>
+                </div>
+              </div>
+              <div className="seller-form-section">
+                <h3>Store information</h3>
+                <div className="seller-fields">
+                  <label>Store name<input value={form.storeName} onChange={(event) => update("storeName", event.target.value)} required /></label>
+                  <label>City<input value={form.city} onChange={(event) => update("city", event.target.value)} required /></label>
+                  <label>Store phone <span className="optional">(optional)</span><input type="tel" inputMode="tel" value={form.storePhone} onChange={(event) => update("storePhone", event.target.value)} placeholder="Uses seller phone if empty" /></label>
+                </div>
+                <label>Description <span className="optional">(optional)</span><textarea rows="3" value={form.description} onChange={(event) => update("description", event.target.value)} /></label>
+                <label>Store address<textarea rows="3" value={form.address} onChange={(event) => update("address", event.target.value)} required /></label>
+              </div>
+              {error && <p className="form-error">{error}</p>}
+              <button className="checkout-btn" type="submit" disabled={submitting}>
+                {submitting ? "Submitting..." : "Register as a Seller"} <i className={`fa ${submitting ? "fa-spinner fa-spin" : "fa-arrow-right"}`} />
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CartDrawer({ cart, subtotal, onClose, onChange, onCheckout }) {
   return (
     <div className="drawer-backdrop" onClick={onClose}>

@@ -1034,6 +1034,17 @@ a {
 .footer-links a:hover {
   color: var(--gold-light);
 }
+.footer-link-button {
+  padding: 0;
+  color: rgba(255, 255, 255, 0.45);
+  background: none;
+  border: 0;
+  font-size: 13px;
+  text-align: left;
+}
+.footer-link-button:hover {
+  color: var(--gold-light);
+}
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   padding: 22px 44px;

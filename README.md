@@ -36,3 +36,13 @@ GET /api/stores/:id/products
 ```
 
 Seller registration, authentication, inventory mutations, and seller dashboards are intentionally deferred to later Phase 2 sub-phases.
+
+## Phase 2.2 seller registration
+
+Seller registration is available through the existing VASTAAR footer action and the following API:
+
+```text
+POST /api/sellers
+```
+
+The request accepts nested `seller` and `store` objects, creates linked records with `pending` status, and rejects duplicate seller emails with HTTP `409`.

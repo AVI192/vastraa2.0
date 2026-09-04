@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -66,6 +67,59 @@ async function writeData(data) {
 app.use(cors());
 app.use(express.json({ limit: '100kb' }));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.post('/api/sellers', async (req, res, next) => {
+  try {
+    const sellerInput = req.body?.seller || {};
+    const storeInput = req.body?.store || {};
+    const seller = {
+      name: String(sellerInput.name || '').trim(),
+      email: String(sellerInput.email || '').trim().toLowerCase(),
+      phone: String(sellerInput.phone || '').trim()
+    };
+    const store = {
+      name: String(storeInput.name || '').trim(),
+      description: String(storeInput.description || '').trim(),
+      city: String(storeInput.city || '').trim(),
+      address: String(storeInput.address || '').trim(),
+      phone: String(storeInput.phone || seller.phone).trim()
+    };
+
+    if (!seller.name || !seller.email || !seller.phone || !store.name || !store.city || !store.address) {
+      return res.status(400).json({ message: 'Please complete all required seller and store fields.' });
+    }
+    if (!/^\S+@\S+\.\S+$/.test(seller.email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address.' });
+    }
+    if (!/^[0-9+()\-\s]{7,20}$/.test(seller.phone) || !/^[0-9+()\-\s]{7,20}$/.test(store.phone)) {
+      return res.status(400).json({ message: 'Please provide a valid phone number.' });
+    }
+
+    const data = await readStoredData();
+    if (data.sellers.some((item) => String(item.email).toLowerCase() === seller.email)) {
+      return res.status(409).json({ message: 'A seller account with this email already exists.' });
+    }
+
+    const createdAt = new Date().toISOString();
+    const sellerRecord = {
+      id: `seller-${randomUUID()}`,
+      ...seller,
+      status: 'pending',
+      createdAt
+    };
+    const storeRecord = {
+      id: `store-${randomUUID()}`,
+      sellerId: sellerRecord.id,
+      ...store,
+      status: 'pending',
+      createdAt
+    };
+
+    data.sellers.push(sellerRecord);
+    data.stores.push(storeRecord);
+    await writeData(data);
+    res.status(201).json({ seller: sellerRecord, store: storeRecord });
+  } catch (error) { next(error); }
+});
 app.get('/api/sellers', async (_req, res, next) => {
   try {
     const data = await readStoredData();
