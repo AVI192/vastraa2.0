@@ -18,4 +18,21 @@ npm run build
 npm start
 ```
 
-The API persists orders and newsletter subscribers in `server/data.json`. Configure `PORT` or `VITE_API_URL` through `.env` when needed.
+The API persists orders, newsletter subscribers, and marketplace foundation collections in `server/data.json`. Configure `PORT` or `VITE_API_URL` through `.env` when needed.
+
+## Phase 2.1 marketplace foundation
+
+The backend now reserves migration-friendly collections for `sellers`, `stores`, `products`, and `inventory`. Existing customer products remain compatible and seller/store collections start empty until seller registration is implemented.
+
+Read-only foundation endpoints:
+
+```text
+GET /api/sellers
+GET /api/sellers/:id
+GET /api/sellers/:id/products
+GET /api/stores
+GET /api/stores/:id
+GET /api/stores/:id/products
+```
+
+Seller registration, authentication, inventory mutations, and seller dashboards are intentionally deferred to later Phase 2 sub-phases.

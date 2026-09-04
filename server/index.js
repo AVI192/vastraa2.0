@@ -48,7 +48,15 @@ async function readData() {
 }
 
 async function readStoredData() {
-  return JSON.parse(await fs.readFile(dataPath, 'utf8'));
+  const data = JSON.parse(await fs.readFile(dataPath, 'utf8'));
+  return {
+    sellers: Array.isArray(data.sellers) ? data.sellers : [],
+    stores: Array.isArray(data.stores) ? data.stores : [],
+    products: Array.isArray(data.products) ? data.products : [],
+    inventory: Array.isArray(data.inventory) ? data.inventory : [],
+    orders: Array.isArray(data.orders) ? data.orders : [],
+    subscribers: Array.isArray(data.subscribers) ? data.subscribers : []
+  };
 }
 
 async function writeData(data) {
@@ -58,6 +66,55 @@ async function writeData(data) {
 app.use(cors());
 app.use(express.json({ limit: '100kb' }));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.get('/api/sellers', async (_req, res, next) => {
+  try {
+    const data = await readStoredData();
+    res.json({ sellers: data.sellers });
+  } catch (error) { next(error); }
+});
+app.get('/api/sellers/:id', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.id);
+    if (!seller) return res.status(404).json({ message: 'Seller not found.' });
+    res.json({ seller });
+  } catch (error) { next(error); }
+});
+app.get('/api/stores', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const stores = req.query.sellerId
+      ? data.stores.filter((item) => item.sellerId === req.query.sellerId)
+      : data.stores;
+    res.json({ stores });
+  } catch (error) { next(error); }
+});
+app.get('/api/stores/:id', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const store = data.stores.find((item) => item.id === req.params.id);
+    if (!store) return res.status(404).json({ message: 'Store not found.' });
+    res.json({ store });
+  } catch (error) { next(error); }
+});
+app.get('/api/sellers/:id/products', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    if (!data.sellers.some((item) => item.id === req.params.id)) {
+      return res.status(404).json({ message: 'Seller not found.' });
+    }
+    res.json({ products: data.products.filter((item) => item.sellerId === req.params.id) });
+  } catch (error) { next(error); }
+});
+app.get('/api/stores/:id/products', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    if (!data.stores.some((item) => item.id === req.params.id)) {
+      return res.status(404).json({ message: 'Store not found.' });
+    }
+    res.json({ products: data.products.filter((item) => item.storeId === req.params.id) });
+  } catch (error) { next(error); }
+});
 app.get('/api/products', async (req, res, next) => {
   try {
     const data = await readData();

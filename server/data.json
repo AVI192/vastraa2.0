@@ -1,5 +1,8 @@
 {
+  "sellers": [],
+  "stores": [],
   "products": [],
+  "inventory": [],
   "orders": [
     {
       "id": "VST-MTN4FYV9",
