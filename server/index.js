@@ -187,11 +187,6 @@ function matchesCategory(item, category) {
   return aliases.some((alias) => normalize(item.category) === normalize(alias) || (item.keywords || []).some((keyword) => normalize(keyword) === normalize(alias)));
 }
 
-async function readData() {
-  const data = JSON.parse(await fs.readFile(dataPath, 'utf8'));
-  return { ...data, products: [...catalog, ...(data.products || [])] };
-}
-
 async function readStoredData() {
   const data = JSON.parse(await fs.readFile(dataPath, 'utf8'));
   return {
@@ -484,7 +479,19 @@ app.post('/api/sellers/:id/products', async (req, res, next) => {
       product.image = updates.image;
     }
 
+    const inventoryRecord = {
+      id: `inv-${randomUUID().slice(0, 8)}`,
+      productId: product.id,
+      sellerId: seller.id,
+      storeId: store.id,
+      quantity: 0,
+      reservedQuantity: 0,
+      availableQuantity: 0,
+      updatedAt: new Date().toISOString()
+    };
+
     data.products = [...(data.products || []), product];
+    data.inventory = [...(data.inventory || []), inventoryRecord];
     await writeData(data);
     res.status(201).json({ product });
   } catch (error) { next(error); }
@@ -540,9 +547,159 @@ app.post('/api/stores/:id/products', async (req, res, next) => {
       product.image = updates.image;
     }
 
+    const inventoryRecord = {
+      id: `inv-${randomUUID().slice(0, 8)}`,
+      productId: product.id,
+      sellerId: store.sellerId,
+      storeId: store.id,
+      quantity: 0,
+      reservedQuantity: 0,
+      availableQuantity: 0,
+      updatedAt: new Date().toISOString()
+    };
+
     data.products = [...(data.products || []), product];
+    data.inventory = [...(data.inventory || []), inventoryRecord];
     await writeData(data);
     res.status(201).json({ product });
+  } catch (error) { next(error); }
+});
+app.get('/api/sellers/:id/inventory', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.id);
+    if (!seller) {
+      return res.status(404).json({ message: 'Seller not found.' });
+    }
+
+    const sellerProducts = data.products.filter((item) => item.sellerId === seller.id);
+    const productMap = new Map(sellerProducts.map((item) => [item.id, item]));
+
+    let inventoryModified = false;
+    for (const prod of sellerProducts) {
+      if (!data.inventory.some((inv) => inv.productId === prod.id)) {
+        const newInv = {
+          id: `inv-${randomUUID().slice(0, 8)}`,
+          productId: prod.id,
+          sellerId: prod.sellerId,
+          storeId: prod.storeId,
+          quantity: 0,
+          reservedQuantity: 0,
+          availableQuantity: 0,
+          updatedAt: new Date().toISOString()
+        };
+        data.inventory.push(newInv);
+        inventoryModified = true;
+      }
+    }
+    if (inventoryModified) {
+      await writeData(data);
+    }
+
+    const sellerInventory = data.inventory
+      .filter((inv) => inv.sellerId === seller.id || productMap.has(inv.productId))
+      .map((inv) => {
+        const prod = productMap.get(inv.productId);
+        return {
+          id: inv.id,
+          productId: inv.productId,
+          sellerId: inv.sellerId,
+          storeId: inv.storeId,
+          quantity: inv.quantity,
+          reservedQuantity: inv.reservedQuantity || 0,
+          availableQuantity: inv.availableQuantity,
+          updatedAt: inv.updatedAt,
+          product: prod ? {
+            id: prod.id,
+            name: prod.name,
+            brand: prod.brand,
+            category: prod.category,
+            price: prod.price,
+            status: prod.status,
+            emoji: prod.emoji,
+            image: prod.image,
+            gradient: prod.gradient
+          } : null
+        };
+      });
+
+    res.json({ inventory: sellerInventory });
+  } catch (error) { next(error); }
+});
+app.get('/api/products/:id/inventory', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const product = data.products.find((item) => item.id === req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    let inventory = data.inventory.find((inv) => inv.productId === product.id);
+    if (!inventory) {
+      inventory = {
+        id: `inv-${randomUUID().slice(0, 8)}`,
+        productId: product.id,
+        sellerId: product.sellerId,
+        storeId: product.storeId,
+        quantity: 0,
+        reservedQuantity: 0,
+        availableQuantity: 0,
+        updatedAt: new Date().toISOString()
+      };
+      data.inventory.push(inventory);
+      await writeData(data);
+    }
+
+    res.json({ inventory });
+  } catch (error) { next(error); }
+});
+app.patch('/api/products/:id/inventory', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const product = data.products.find((item) => item.id === req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    if (req.body?.quantity === undefined || req.body?.quantity === null) {
+      return res.status(400).json({ message: 'Quantity is required.' });
+    }
+
+    const qty = req.body.quantity;
+    if (typeof qty !== 'number' || !Number.isInteger(qty) || !isFinite(qty) || qty < 0 || qty > 1000000) {
+      return res.status(400).json({ message: 'Quantity must be an integer between 0 and 1,000,000.' });
+    }
+
+    let inventoryIndex = data.inventory.findIndex((item) => item.productId === product.id);
+    let inventory = inventoryIndex !== -1 ? data.inventory[inventoryIndex] : null;
+
+    const reservedQuantity = inventory ? (Number(inventory.reservedQuantity) || 0) : 0;
+    if (qty < reservedQuantity) {
+      return res.status(400).json({ message: 'Quantity cannot be less than reserved quantity.' });
+    }
+
+    const availableQuantity = qty - reservedQuantity;
+    const now = new Date().toISOString();
+
+    const updatedInventory = {
+      id: inventory?.id || `inv-${randomUUID().slice(0, 8)}`,
+      productId: product.id,
+      sellerId: product.sellerId,
+      storeId: product.storeId,
+      quantity: qty,
+      reservedQuantity,
+      availableQuantity,
+      updatedAt: now
+    };
+
+    if (inventoryIndex !== -1) {
+      data.inventory[inventoryIndex] = updatedInventory;
+    } else {
+      data.inventory.push(updatedInventory);
+    }
+
+    await writeData(data);
+    res.json({ inventory: updatedInventory });
   } catch (error) { next(error); }
 });
 app.get('/api/products/:id', async (req, res, next) => {

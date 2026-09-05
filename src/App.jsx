@@ -1148,13 +1148,22 @@ function SellerDashboard({ onClose }) {
                   openAddDirectly={openAddProduct}
                   onCloseAddDirectly={() => setOpenAddProduct(false)}
                 />
+              ) : view === "inventory" ? (
+                <SellerInventory
+                  sellerId={dashboard.seller.id}
+                  store={dashboard.store}
+                  onBack={() => setView("dashboard")}
+                  onInventoryCountChange={(count) => {
+                    setDashboard((current) => current ? { ...current, stats: { ...current.stats, inventory: count } } : current);
+                  }}
+                />
               ) : (
                 <>
                   <div className="dashboard-welcome"><span>Welcome, {dashboard.seller.name}</span><small>{dashboard.store?.name || "Store not created"}</small></div>
                   <div className="dashboard-grid">
                     <DashboardCard icon="fa-shield-halved" label="Verification" value={statusLabel} tone={status} detail={status === "rejected" ? dashboard.seller.verification?.rejectionReason : status === "pending" ? "Your application is under review." : "Seller verification complete."} />
                     <DashboardCard icon="fa-box" label="Products" value={dashboard.stats.products} detail={`${dashboard.stats.products} listed in store`} />
-                    <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory || "Coming soon"} detail="Inventory management arrives in Phase 2.7." />
+                    <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory !== undefined ? dashboard.stats.inventory : 0} detail={`${dashboard.stats.inventory !== undefined ? dashboard.stats.inventory : 0} tracked items`} />
                     <DashboardCard icon="fa-receipt" label="Orders" value={dashboard.stats.orders} detail="Seller orders arrive in a later phase." />
                     <DashboardCard icon="fa-store" label="Store status" value={dashboard.store?.status || "Not available"} detail={dashboard.store?.city || "Store profile"} />
                     <DashboardCard icon="fa-id-card" label="Seller ID" value={dashboard.seller.id} detail={`Registered ${new Date(dashboard.seller.createdAt).toLocaleDateString("en-NP")}`} />
@@ -1192,7 +1201,14 @@ function SellerDashboard({ onClose }) {
                       >
                         Add Product <small>{dashboard.store ? "List a new item" : "Store not created"}</small>
                       </button>
-                      <button disabled>Manage Inventory <small>Phase 2.7</small></button>
+                      <button
+                        type="button"
+                        className="dashboard-action-active"
+                        onClick={() => setView("inventory")}
+                        disabled={!dashboard.store}
+                      >
+                        Manage Inventory <small>{dashboard.store ? "Track & update stock" : "Store not created"}</small>
+                      </button>
                       <button disabled>View Orders <small>Phase 2.8</small></button>
                     </div>
                   </div>
@@ -2137,6 +2153,209 @@ function ProductFormModal({ product, storeId, sellerId, onClose, onSaved }) {
 
 function DashboardCard({ icon, label, value, detail, tone = "" }) {
   return <article className={`dashboard-card ${tone}`}><i className={`fa ${icon}`} /><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>;
+}
+
+function SellerInventory({ sellerId, store, onBack, onInventoryCountChange }) {
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
+  const [editQuantity, setEditQuantity] = useState({});
+
+  const loadInventory = useCallback(async () => {
+    if (!sellerId) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`${API}/sellers/${encodeURIComponent(sellerId)}/inventory`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to load inventory.");
+      const items = Array.isArray(data.inventory) ? data.inventory : [];
+      setInventory(items);
+      if (onInventoryCountChange) onInventoryCountChange(items.length);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [sellerId, onInventoryCountChange]);
+
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]);
+
+  const handleUpdateQuantity = async (invItem) => {
+    const newQty = editQuantity[invItem.id];
+    if (newQty === undefined || newQty === null || newQty === "") {
+      setError("Please enter a valid quantity.");
+      return;
+    }
+
+    const qty = Number(newQty);
+    if (isNaN(qty) || !Number.isInteger(qty) || qty < 0 || qty > 1000000) {
+      setError("Quantity must be an integer between 0 and 1,000,000.");
+      return;
+    }
+
+    setUpdatingId(invItem.id);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch(`${API}/products/${encodeURIComponent(invItem.productId)}/inventory`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: qty })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update inventory.");
+
+      setInventory((current) =>
+        current.map((item) =>
+          item.id === invItem.id ? { ...item, ...data.inventory } : item
+        )
+      );
+      setSuccess(`Inventory for "${invItem.product?.name || 'product'}" updated successfully.`);
+      setTimeout(() => setSuccess(""), 4000);
+      setEditQuantity((prev) => {
+        const next = { ...prev };
+        delete next[invItem.id];
+        return next;
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const getInventoryStatus = (availableQty) => {
+    if (availableQty === 0) return { label: "OUT OF STOCK", tone: "out-of-stock" };
+    if (availableQty <= 5) return { label: "LOW STOCK", tone: "low-stock" };
+    return { label: "IN STOCK", tone: "in-stock" };
+  };
+
+  return (
+    <div className="seller-products-view">
+      <div className="seller-products-header">
+        <div className="seller-products-title-wrap">
+          <button className="store-profile-back" onClick={onBack}>
+            <i className="fa fa-arrow-left" /> Back to Dashboard
+          </button>
+          <div>
+            <h3>Inventory Management</h3>
+            <p className="seller-products-subtitle">Track and update stock quantities</p>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="store-profile-error" role="alert">
+          <i className="fa fa-circle-exclamation" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {success && (
+        <div className="store-profile-success" role="status">
+          <i className="fa fa-circle-check" />
+          <span>{success}</span>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="seller-products-state">
+          <i className="fa fa-spinner fa-spin" />
+          <strong>Loading inventory...</strong>
+        </div>
+      ) : !inventory.length ? (
+        <div className="seller-products-state">
+          <i className="fa fa-layer-group" />
+          <strong>No inventory found</strong>
+          <span>Add products to your store to begin tracking inventory.</span>
+        </div>
+      ) : (
+        <div className="inventory-table-wrap">
+          <table className="inventory-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Reserved</th>
+                <th>Available</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inventory.map((item) => {
+                const product = item.product || {};
+                const status = getInventoryStatus(item.availableQuantity);
+                const isEditing = editQuantity[item.id] !== undefined;
+                const currentQty = isEditing ? editQuantity[item.id] : item.quantity;
+
+                return (
+                  <tr key={item.id}>
+                    <td className="inventory-product-cell">
+                      {product.image ? (
+                        <img src={product.image} alt="" className="inventory-product-img" />
+                      ) : (
+                        <span className="inventory-product-emoji">{product.emoji || "📦"}</span>
+                      )}
+                      <div className="inventory-product-info">
+                        <strong>{product.name || "Unknown Product"}</strong>
+                        <small>{product.brand || "—"}</small>
+                      </div>
+                    </td>
+                    <td>{product.category || "—"}</td>
+                    <td className="inventory-price">{money(product.price || 0)}</td>
+                    <td>
+                      <input
+                        type="number"
+                        className="inventory-qty-input"
+                        value={currentQty}
+                        onChange={(e) =>
+                          setEditQuantity((prev) => ({ ...prev, [item.id]: e.target.value }))
+                        }
+                        min={0}
+                        max={1000000}
+                        disabled={updatingId === item.id}
+                      />
+                    </td>
+                    <td>{item.reservedQuantity || 0}</td>
+                    <td className="inventory-available">{item.availableQuantity}</td>
+                    <td>
+                      <span className={`inventory-status ${status.tone}`}>{status.label}</span>
+                    </td>
+                    <td>
+                      <button
+                        className="inventory-update-btn"
+                        onClick={() => handleUpdateQuantity(item)}
+                        disabled={updatingId === item.id || !isEditing}
+                      >
+                        {updatingId === item.id ? (
+                          <>
+                            <i className="fa fa-spinner fa-spin" /> Updating...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa fa-check" /> Update
+                          </>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function CartDrawer({ cart, subtotal, onClose, onChange, onCheckout }) {
