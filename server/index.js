@@ -11,18 +11,28 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 
 const catalog = [
-  { id: 'p1', emoji: '🥻', image: 'https://images.unsplash.com/photo-1610030469983-98e550d4d0f4?auto=format&fit=crop&w=700&q=85', gradient: 'rose', badge: '40% OFF', badgeType: 'sale', brand: 'Tibetan Arts', name: 'Traditional Dhaka Kurta', price: 1899, was: 3199, rating: 4.5, reviews: 1284, category: 'Ethnic Wear', keywords: ['kurta', 'men wear', 'menswear'] },
-  { id: 'p2', emoji: '👔', image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=700&q=85', gradient: 'sky', badge: 'NEW', badgeType: 'new', brand: 'NepalMen', name: 'Classic Daura Suruwal Set', price: 2499, was: 3800, rating: 4.7, reviews: 2891, category: 'Men', keywords: ['men wear', 'menswear', 'daura', 'suruwal'] },
-  { id: 'p3', emoji: '💍', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=700&q=85', gradient: 'lilac', badge: 'HOT', badgeType: 'hot', brand: 'KathmanduGems', name: 'Silver Filigree Necklace', price: 3200, was: 5000, rating: 4.8, reviews: 956, category: 'Jewellery', keywords: ['jewelry', 'jewellery', 'necklace', 'women'] },
-  { id: 'p4', emoji: '👡', image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=700&q=85', gradient: 'sun', badge: 'BESTSELLER', badgeType: 'best', brand: 'EverestSteps', name: 'Handcrafted Leather Heels', price: 2150, was: 3500, rating: 4.6, reviews: 3412, category: 'Footwear', keywords: ['shoes', 'women'] },
-  { id: 'p5', emoji: '🧥', image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?auto=format&fit=crop&w=700&q=85', gradient: 'mint', badge: '50% OFF', badgeType: 'sale', brand: 'HimalWool', name: 'Premium Pashmina Jacket', price: 4500, was: 9000, rating: 4.9, reviews: 5020, category: 'Women', keywords: ['women wear', 'womenswear', 'jacket', 'pashmina'] },
-  { id: 'p6', emoji: '👛', image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=700&q=85', gradient: 'pink', badge: 'NEW', badgeType: 'new', brand: 'DhakaStyle', name: 'Woven Dhaka Clutch Bag', price: 1350, was: 2000, rating: 4.4, reviews: 788, category: 'Bags', keywords: ['bag', 'women'] },
-  { id: 'p7', emoji: '🧣', image: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=700&q=85', gradient: 'aqua', badge: 'HOT', badgeType: 'hot', brand: 'SherpaKnit', name: 'Yak Wool Muffler Scarf', price: 890, was: 1400, rating: 4.6, reviews: 1905, category: 'Accessories', keywords: ['scarf', 'winter', 'men', 'women'] },
-  { id: 'p8', emoji: '🧢', image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=700&q=85', gradient: 'indigo', badge: 'BESTSELLER', badgeType: 'best', brand: 'NepalPeak', name: 'Trekking Cap Collection', price: 599, was: 999, rating: 4.3, reviews: 4110, category: 'Accessories', keywords: ['cap', 'trekking', 'men'] },
-  { id: 'p9', emoji: '🧒', image: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=700&q=85', gradient: 'mint', badge: 'NEW', badgeType: 'new', brand: 'Little Kathmandu', name: 'Dhaka Kids Hoodie', price: 1299, was: 1800, rating: 4.6, reviews: 342, category: 'Kids', keywords: ['children', 'kids wear'] },
-  { id: 'p10', emoji: '👚', image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=700&q=85', gradient: 'pink', badge: 'TRENDING', badgeType: 'hot', brand: 'KTM Street', name: 'Everyday Western Overshirt', price: 1799, was: 2400, rating: 4.5, reviews: 611, category: 'Western', keywords: ['western wear', 'streetwear'] },
-  { id: 'p11', emoji: '💄', image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=700&q=85', gradient: 'lilac', badge: 'NEW', badgeType: 'new', brand: 'HerbalNep', name: 'Himalayan Beauty Essentials', price: 999, was: 1400, rating: 4.7, reviews: 285, category: 'Beauty', keywords: ['cosmetics', 'skincare'] },
-  { id: 'p12', emoji: '🧺', image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=700&q=85', gradient: 'sun', badge: 'EDIT', badgeType: 'best', brand: 'VASTAAR Home', name: 'Handwoven Himalayan Throw', price: 2199, was: 3000, rating: 4.8, reviews: 154, category: 'Home & Living', keywords: ['home', 'living', 'decor'] }
+  { id: 'p1', emoji: 'ðŸ¥»', image: 'https://images.unsplash.com/photo-1610030469983-98e550d4d0f4?auto=format&fit=crop&w=700&q=85', gradient: 'rose', badge: '40% OFF', badgeType: 'sale', brand: 'Tibetan Arts', name: 'Traditional Dhaka Kurta', price: 1899, was: 3199, rating: 4.5, reviews: 1284, category: 'Ethnic Wear', keywords: ['kurta', 'men wear', 'menswear'] },
+  { id: 'p2', emoji: 'ðŸ‘”', image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=700&q=85', gradient: 'sky', badge: 'NEW', badgeType: 'new', brand: 'NepalMen', name: 'Classic Daura Suruwal Set', price: 2499, was: 3800, rating: 4.7, reviews: 2891, category: 'Men', keywords: ['men wear', 'menswear', 'daura', 'suruwal'] },
+  { id: 'p3', emoji: 'ðŸ’', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=700&q=85', gradient: 'lilac', badge: 'HOT', badgeType: 'hot', brand: 'KathmanduGems', name: 'Silver Filigree Necklace', price: 3200, was: 5000, rating: 4.8, reviews: 956, category: 'Jewellery', keywords: ['jewelry', 'jewellery', 'necklace', 'women'] },
+  { id: 'p4', emoji: 'ðŸ‘¡', image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=700&q=85', gradient: 'sun', badge: 'BESTSELLER', badgeType: 'best', brand: 'EverestSteps', name: 'Handcrafted Leather Heels', price: 2150, was: 3500, rating: 4.6, reviews: 3412, category: 'Footwear', keywords: ['shoes', 'women'] },
+  { id: 'p5', emoji: 'ðŸ§¥', image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?auto=format&fit=crop&w=700&q=85', gradient: 'mint', badge: '50% OFF', badgeType: 'sale', brand: 'HimalWool', name: 'Premium Pashmina Jacket', price: 4500, was: 9000, rating: 4.9, reviews: 5020, category: 'Women', keywords: ['women wear', 'womenswear', 'jacket', 'pashmina'] },
+  { id: 'p6', emoji: 'ðŸ‘›', image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=700&q=85', gradient: 'pink', badge: 'NEW', badgeType: 'new', brand: 'DhakaStyle', name: 'Woven Dhaka Clutch Bag', price: 1350, was: 2000, rating: 4.4, reviews: 788, category: 'Bags', keywords: ['bag', 'women'] },
+  { id: 'p7', emoji: 'ðŸ§£', image: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=700&q=85', gradient: 'aqua', badge: 'HOT', badgeType: 'hot', brand: 'SherpaKnit', name: 'Yak Wool Muffler Scarf', price: 890, was: 1400, rating: 4.6, reviews: 1905, category: 'Accessories', keywords: ['scarf', 'winter', 'men', 'women'] },
+  { id: 'p8', emoji: 'ðŸ§¢', image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=700&q=85', gradient: 'indigo', badge: 'BESTSELLER', badgeType: 'best', brand: 'NepalPeak', name: 'Trekking Cap Collection', price: 599, was: 999, rating: 4.3, reviews: 4110, category: 'Accessories', keywords: ['cap', 'trekking', 'men'] },
+  { id: 'p9', emoji: 'ðŸ§’', image: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=700&q=85', gradient: 'mint', badge: 'NEW', badgeType: 'new', brand: 'Little Kathmandu', name: 'Dhaka Kids Hoodie', price: 1299, was: 1800, rating: 4.6, reviews: 342, category: 'Kids', keywords: ['children', 'kids wear'] },
+  { id: 'p10', emoji: 'ðŸ‘š', image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=700&q=85', gradient: 'pink', badge: 'TRENDING', badgeType: 'hot', brand: 'KTM Street', name: 'Everyday Western Overshirt', price: 1799, was: 2400, rating: 4.5, reviews: 611, category: 'Western', keywords: ['western wear', 'streetwear'] },
+  { id: 'p11', emoji: 'ðŸ’„', image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=700&q=85', gradient: 'lilac', badge: 'NEW', badgeType: 'new', brand: 'HerbalNep', name: 'Himalayan Beauty Essentials', price: 999, was: 1400, rating: 4.7, reviews: 285, category: 'Beauty', keywords: ['cosmetics', 'skincare'] },
+  { id: 'p12', emoji: 'ðŸ§º', image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=700&q=85', gradient: 'sun', badge: 'EDIT', badgeType: 'best', brand: 'VASTAAR Home', name: 'Handwoven Himalayan Throw', price: 2199, was: 3000, rating: 4.8, reviews: 154, category: 'Home & Living', keywords: ['home', 'living', 'decor'] }
+];
+
+const NEPAL_PROVINCES = [
+  'Koshi',
+  'Madhesh',
+  'Bagmati',
+  'Gandaki',
+  'Lumbini',
+  'Karnali',
+  'Sudurpashchim'
 ];
 
 const categoryAliases = {
@@ -33,17 +43,17 @@ const categoryAliases = {
 };
 
 const categoryEmojiMap = {
-  'Ethnic Wear': '👗',
-  'Western': '👕',
-  'Kids': '👶',
-  'Footwear': '👟',
-  'Jewellery': '💎',
-  'Bags': '👜',
-  'Beauty': '🧴',
-  'Men': '👔',
-  'Women': '🥻',
-  'Accessories': '🧣',
-  'Home & Living': '🧺'
+  'Ethnic Wear': 'ðŸ‘—',
+  'Western': 'ðŸ‘•',
+  'Kids': 'ðŸ‘¶',
+  'Footwear': 'ðŸ‘Ÿ',
+  'Jewellery': 'ðŸ’Ž',
+  'Bags': 'ðŸ‘œ',
+  'Beauty': 'ðŸ§´',
+  'Men': 'ðŸ‘”',
+  'Women': 'ðŸ¥»',
+  'Accessories': 'ðŸ§£',
+  'Home & Living': 'ðŸ§º'
 };
 
 function validateProductInput(body, isUpdate = false, existingProduct = null) {
@@ -177,7 +187,7 @@ function validateProductInput(body, isUpdate = false, existingProduct = null) {
 }
 
 function normalize(value) {
-  return String(value || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  return String(value || '').toLowerCase().replace(/[â€™']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
 function matchesCategory(item, category) {
@@ -218,10 +228,28 @@ app.post('/api/sellers', async (req, res, next) => {
     const store = {
       name: String(storeInput.name || '').trim(),
       description: String(storeInput.description || '').trim(),
+      country: 'Nepal',
       city: String(storeInput.city || '').trim(),
       address: String(storeInput.address || '').trim(),
       phone: String(storeInput.phone || seller.phone).trim()
     };
+
+    if (storeInput.district !== undefined && storeInput.district !== null && String(storeInput.district).trim() !== '') {
+      const district = String(storeInput.district).trim();
+      if (district.length > 60) {
+        return res.status(400).json({ message: 'District name cannot exceed 60 characters.' });
+      }
+      store.district = district;
+    }
+
+    if (storeInput.province !== undefined && storeInput.province !== null && String(storeInput.province).trim() !== '') {
+      const provStr = String(storeInput.province).trim();
+      const matched = NEPAL_PROVINCES.find((p) => p.toLowerCase() === provStr.toLowerCase());
+      if (!matched) {
+        return res.status(400).json({ message: 'Invalid province. Supported Nepal provinces: Koshi, Madhesh, Bagmati, Gandaki, Lumbini, Karnali, Sudurpashchim.' });
+      }
+      store.province = matched;
+    }
 
     if (!seller.name || !seller.email || !seller.phone || !store.name || !store.city || !store.address) {
       return res.status(400).json({ message: 'Please complete all required seller and store fields.' });
@@ -339,9 +367,10 @@ app.get('/api/sellers/:id/dashboard', async (req, res, next) => {
 app.get('/api/stores', async (req, res, next) => {
   try {
     const data = await readStoredData();
-    const stores = req.query.sellerId
+    const stores = (req.query.sellerId
       ? data.stores.filter((item) => item.sellerId === req.query.sellerId)
-      : data.stores;
+      : data.stores
+    ).map((store) => ({ country: 'Nepal', ...store }));
     res.json({ stores });
   } catch (error) { next(error); }
 });
@@ -350,7 +379,7 @@ app.get('/api/stores/:id', async (req, res, next) => {
     const data = await readStoredData();
     const store = data.stores.find((item) => item.id === req.params.id);
     if (!store) return res.status(404).json({ message: 'Store not found.' });
-    res.json({ store });
+    res.json({ store: { country: 'Nepal', ...store } });
   } catch (error) { next(error); }
 });
 app.patch('/api/stores/:id', async (req, res, next) => {
@@ -377,28 +406,94 @@ app.patch('/api/stores/:id', async (req, res, next) => {
       store.description = description;
     }
 
+    if (updates.country !== undefined) {
+      if (updates.country !== null && updates.country !== '') {
+        const country = String(updates.country).trim();
+        if (country.length > 60) {
+          return res.status(400).json({ message: 'Country name cannot exceed 60 characters.' });
+        }
+        if (country.toLowerCase() !== 'nepal') {
+          return res.status(400).json({ message: 'VASTAAR currently only supports stores in Nepal.' });
+        }
+        store.country = 'Nepal';
+      } else {
+        store.country = 'Nepal';
+      }
+    }
+
+    if (updates.province !== undefined) {
+      if (updates.province !== null && updates.province !== '') {
+        const provStr = String(updates.province).trim();
+        const matched = NEPAL_PROVINCES.find((p) => p.toLowerCase() === provStr.toLowerCase());
+        if (!matched) {
+          return res.status(400).json({ message: 'Invalid province. Supported Nepal provinces: Koshi, Madhesh, Bagmati, Gandaki, Lumbini, Karnali, Sudurpashchim.' });
+        }
+        store.province = matched;
+      } else {
+        delete store.province;
+      }
+    }
+
     if (updates.city !== undefined) {
       const city = String(updates.city || '').trim();
       if (!city || city.length > 60) {
-        return res.status(400).json({ message: 'Please provide a valid city name.' });
+        return res.status(400).json({ message: 'Please provide a valid city name (max 60 characters).' });
       }
       store.city = city;
     }
 
     if (updates.district !== undefined) {
-      const district = String(updates.district || '').trim();
-      if (district.length > 60) {
-        return res.status(400).json({ message: 'District name cannot exceed 60 characters.' });
+      if (updates.district !== null && updates.district !== '') {
+        const district = String(updates.district).trim();
+        if (district.length > 60) {
+          return res.status(400).json({ message: 'District name cannot exceed 60 characters.' });
+        }
+        store.district = district;
+      } else {
+        delete store.district;
       }
-      store.district = district;
     }
 
     if (updates.address !== undefined) {
       const address = String(updates.address || '').trim();
       if (!address || address.length > 200) {
-        return res.status(400).json({ message: 'Please provide a valid store address.' });
+        return res.status(400).json({ message: 'Please provide a valid store address (max 200 characters).' });
       }
       store.address = address;
+    }
+
+    if (updates.latitude !== undefined) {
+      if (updates.latitude === null || updates.latitude === '' || (typeof updates.latitude === 'string' && updates.latitude.trim() === '')) {
+        delete store.latitude;
+      } else if (typeof updates.latitude === 'boolean') {
+        return res.status(400).json({ message: 'Latitude must be a valid numeric value.' });
+      } else {
+        const lat = Number(updates.latitude);
+        if (isNaN(lat) || !isFinite(lat) || typeof updates.latitude === 'object') {
+          return res.status(400).json({ message: 'Latitude must be a valid numeric value.' });
+        }
+        if (lat < -90 || lat > 90) {
+          return res.status(400).json({ message: 'Latitude must be between -90 and 90 degrees.' });
+        }
+        store.latitude = lat;
+      }
+    }
+
+    if (updates.longitude !== undefined) {
+      if (updates.longitude === null || updates.longitude === '' || (typeof updates.longitude === 'string' && updates.longitude.trim() === '')) {
+        delete store.longitude;
+      } else if (typeof updates.longitude === 'boolean') {
+        return res.status(400).json({ message: 'Longitude must be a valid numeric value.' });
+      } else {
+        const lng = Number(updates.longitude);
+        if (isNaN(lng) || !isFinite(lng) || typeof updates.longitude === 'object') {
+          return res.status(400).json({ message: 'Longitude must be a valid numeric value.' });
+        }
+        if (lng < -180 || lng > 180) {
+          return res.status(400).json({ message: 'Longitude must be between -180 and 180 degrees.' });
+        }
+        store.longitude = lng;
+      }
     }
 
     if (updates.phone !== undefined) {
@@ -414,7 +509,7 @@ app.patch('/api/stores/:id', async (req, res, next) => {
       if (email && (!/^\S+@\S+\.\S+$/.test(email) || email.length > 100)) {
         return res.status(400).json({ message: 'Please provide a valid store email address.' });
       }
-      store.email = email;
+      store.email = email || null;
     }
 
     if (updates.openingHours !== undefined) {
@@ -426,7 +521,7 @@ app.patch('/api/stores/:id', async (req, res, next) => {
     }
 
     await writeData(data);
-    res.json({ store });
+    res.json({ store: { country: 'Nepal', ...store } });
   } catch (error) { next(error); }
 });
 app.get('/api/sellers/:id/products', async (req, res, next) => {
@@ -451,7 +546,7 @@ app.post('/api/sellers/:id/products', async (req, res, next) => {
       return res.status(400).json({ message: errors[0], errors });
     }
 
-    const defaultEmoji = categoryEmojiMap[updates.category] || '🛍️';
+    const defaultEmoji = categoryEmojiMap[updates.category] || 'ðŸ›ï¸';
     const product = {
       id: `prod-${randomUUID().slice(0, 8)}`,
       sellerId: seller.id,
@@ -519,7 +614,7 @@ app.post('/api/stores/:id/products', async (req, res, next) => {
       return res.status(400).json({ message: errors[0], errors });
     }
 
-    const defaultEmoji = categoryEmojiMap[updates.category] || '🛍️';
+    const defaultEmoji = categoryEmojiMap[updates.category] || 'ðŸ›ï¸';
     const product = {
       id: `prod-${randomUUID().slice(0, 8)}`,
       sellerId: store.sellerId,
@@ -908,7 +1003,7 @@ app.patch('/api/sellers/:sellerId/orders/:orderId/status', async (req, res, next
   } catch (error) { next(error); }
 });
 function enrichMarketplaceProduct(prod, store, inv) {
-  const defaultEmoji = categoryEmojiMap[prod.category] || '🛍️';
+  const defaultEmoji = categoryEmojiMap[prod.category] || 'ðŸ›ï¸';
   return {
     id: prod.id,
     name: prod.name,

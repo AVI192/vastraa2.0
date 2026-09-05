@@ -1254,6 +1254,16 @@ function SellerDashboard({ onClose }) {
   );
 }
 
+const NEPAL_PROVINCES = [
+  "Koshi",
+  "Madhesh",
+  "Bagmati",
+  "Gandaki",
+  "Lumbini",
+  "Karnali",
+  "Sudurpashchim",
+];
+
 function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
   const [store, setStore] = useState(initialStore || null);
   const [loading, setLoading] = useState(!initialStore && Boolean(storeId));
@@ -1262,9 +1272,13 @@ function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
     name: initialStore?.name || "",
     phone: initialStore?.phone || "",
     email: initialStore?.email || "",
+    country: initialStore?.country || "Nepal",
+    province: initialStore?.province || "",
     city: initialStore?.city || "",
     district: initialStore?.district || "",
     address: initialStore?.address || "",
+    latitude: initialStore?.latitude !== undefined && initialStore?.latitude !== null ? String(initialStore.latitude) : "",
+    longitude: initialStore?.longitude !== undefined && initialStore?.longitude !== null ? String(initialStore.longitude) : "",
     openingHours: initialStore?.openingHours || "",
     description: initialStore?.description || "",
   });
@@ -1285,9 +1299,13 @@ function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
         name: body.store.name || "",
         phone: body.store.phone || "",
         email: body.store.email || "",
+        country: body.store.country || "Nepal",
+        province: body.store.province || "",
         city: body.store.city || "",
         district: body.store.district || "",
         address: body.store.address || "",
+        latitude: body.store.latitude !== undefined && body.store.latitude !== null ? String(body.store.latitude) : "",
+        longitude: body.store.longitude !== undefined && body.store.longitude !== null ? String(body.store.longitude) : "",
         openingHours: body.store.openingHours || "",
         description: body.store.description || "",
       });
@@ -1322,9 +1340,13 @@ function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
         name: form.name.trim(),
         phone: form.phone.trim(),
         email: form.email.trim(),
+        country: form.country.trim() || "Nepal",
+        province: form.province.trim() || null,
         city: form.city.trim(),
-        district: form.district.trim(),
+        district: form.district.trim() || null,
         address: form.address.trim(),
+        latitude: form.latitude.trim() === "" ? null : Number(form.latitude),
+        longitude: form.longitude.trim() === "" ? null : Number(form.longitude),
         openingHours: form.openingHours.trim(),
         description: form.description.trim(),
       };
@@ -1344,9 +1366,13 @@ function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
         name: body.store.name || "",
         phone: body.store.phone || "",
         email: body.store.email || "",
+        country: body.store.country || "Nepal",
+        province: body.store.province || "",
         city: body.store.city || "",
         district: body.store.district || "",
         address: body.store.address || "",
+        latitude: body.store.latitude !== undefined && body.store.latitude !== null ? String(body.store.latitude) : "",
+        longitude: body.store.longitude !== undefined && body.store.longitude !== null ? String(body.store.longitude) : "",
         openingHours: body.store.openingHours || "",
         description: body.store.description || "",
       });
@@ -1484,6 +1510,30 @@ function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
               />
             </label>
             <label>
+              Country <span className="optional">(default Nepal)</span>
+              <input
+                type="text"
+                value={form.country}
+                onChange={(event) => updateField("country", event.target.value)}
+                maxLength={60}
+                placeholder="Nepal"
+              />
+            </label>
+            <label>
+              Province <span className="optional">(optional)</span>
+              <select
+                value={form.province}
+                onChange={(event) => updateField("province", event.target.value)}
+              >
+                <option value="">Select Province (optional)</option>
+                {NEPAL_PROVINCES.map((prov) => (
+                  <option key={prov} value={prov}>
+                    {prov}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
               City <span style={{ color: "var(--crimson)" }}>*</span>
               <input
                 type="text"
@@ -1502,6 +1552,30 @@ function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
                 onChange={(event) => updateField("district", event.target.value)}
                 maxLength={60}
                 placeholder="e.g. Kathmandu, Lalitpur, Kaski"
+              />
+            </label>
+            <label>
+              Latitude <span className="optional">(-90 to 90)</span>
+              <input
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                value={form.latitude}
+                onChange={(event) => updateField("latitude", event.target.value)}
+                placeholder="e.g. 27.7172"
+              />
+            </label>
+            <label>
+              Longitude <span className="optional">(-180 to 180)</span>
+              <input
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                value={form.longitude}
+                onChange={(event) => updateField("longitude", event.target.value)}
+                placeholder="e.g. 85.3240"
               />
             </label>
             <label>
