@@ -213,6 +213,82 @@ app.get('/api/stores/:id', async (req, res, next) => {
     res.json({ store });
   } catch (error) { next(error); }
 });
+app.patch('/api/stores/:id', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const store = data.stores.find((item) => item.id === req.params.id);
+    if (!store) return res.status(404).json({ message: 'Store not found.' });
+
+    const updates = req.body || {};
+
+    if (updates.name !== undefined) {
+      const name = String(updates.name || '').trim();
+      if (name.length < 2 || name.length > 100) {
+        return res.status(400).json({ message: 'Store name must be between 2 and 100 characters.' });
+      }
+      store.name = name;
+    }
+
+    if (updates.description !== undefined) {
+      const description = String(updates.description || '').trim();
+      if (description.length > 500) {
+        return res.status(400).json({ message: 'Description cannot exceed 500 characters.' });
+      }
+      store.description = description;
+    }
+
+    if (updates.city !== undefined) {
+      const city = String(updates.city || '').trim();
+      if (!city || city.length > 60) {
+        return res.status(400).json({ message: 'Please provide a valid city name.' });
+      }
+      store.city = city;
+    }
+
+    if (updates.district !== undefined) {
+      const district = String(updates.district || '').trim();
+      if (district.length > 60) {
+        return res.status(400).json({ message: 'District name cannot exceed 60 characters.' });
+      }
+      store.district = district;
+    }
+
+    if (updates.address !== undefined) {
+      const address = String(updates.address || '').trim();
+      if (!address || address.length > 200) {
+        return res.status(400).json({ message: 'Please provide a valid store address.' });
+      }
+      store.address = address;
+    }
+
+    if (updates.phone !== undefined) {
+      const phone = String(updates.phone || '').trim();
+      if (!/^[0-9+()\-\s]{7,20}$/.test(phone)) {
+        return res.status(400).json({ message: 'Please provide a valid store phone number.' });
+      }
+      store.phone = phone;
+    }
+
+    if (updates.email !== undefined) {
+      const email = String(updates.email || '').trim().toLowerCase();
+      if (email && (!/^\S+@\S+\.\S+$/.test(email) || email.length > 100)) {
+        return res.status(400).json({ message: 'Please provide a valid store email address.' });
+      }
+      store.email = email;
+    }
+
+    if (updates.openingHours !== undefined) {
+      const openingHours = String(updates.openingHours || '').trim();
+      if (openingHours.length > 100) {
+        return res.status(400).json({ message: 'Opening hours cannot exceed 100 characters.' });
+      }
+      store.openingHours = openingHours;
+    }
+
+    await writeData(data);
+    res.json({ store });
+  } catch (error) { next(error); }
+});
 app.get('/api/sellers/:id/products', async (req, res, next) => {
   try {
     const data = await readStoredData();

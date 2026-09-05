@@ -1075,6 +1075,7 @@ function SellerDashboard({ onClose }) {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [view, setView] = useState("dashboard");
 
   useEffect(() => {
     fetch(`${API}/sellers`)
@@ -1092,6 +1093,7 @@ function SellerDashboard({ onClose }) {
   }, []);
 
   useEffect(() => {
+    setView("dashboard");
     if (!sellerId) {
       setDashboard(null);
       return undefined;
@@ -1123,21 +1125,352 @@ function SellerDashboard({ onClose }) {
         {loading && !sellers.length ? <div className="dashboard-state">Loading seller accounts...</div> : error ? <div className="dashboard-state dashboard-error">{error}</div> : !sellers.length ? <div className="dashboard-state"><i className="fa fa-store" /><strong>No seller accounts yet</strong><span>Complete seller registration before opening a dashboard.</span></div> : (
           <>
             <label className="dashboard-select-label">Demo seller<select value={sellerId} onChange={(event) => setSellerId(event.target.value)}>{sellers.map((seller) => <option value={seller.id} key={seller.id}>{seller.name} - {seller.status}</option>)}</select></label>
-            {loading ? <div className="dashboard-state">Loading dashboard...</div> : dashboard && <>
-              <div className="dashboard-welcome"><span>Welcome, {dashboard.seller.name}</span><small>{dashboard.store?.name || "Store not created"}</small></div>
-              <div className="dashboard-grid">
-                <DashboardCard icon="fa-shield-halved" label="Verification" value={statusLabel} tone={status} detail={status === "rejected" ? dashboard.seller.verification?.rejectionReason : status === "pending" ? "Your application is under review." : "Seller verification complete."} />
-                <DashboardCard icon="fa-box" label="Products" value={dashboard.stats.products} detail="Available in later phase" />
-                <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory || "Coming soon"} detail="Inventory management is not active yet." />
-                <DashboardCard icon="fa-receipt" label="Orders" value={dashboard.stats.orders} detail="Seller orders arrive in a later phase." />
-                <DashboardCard icon="fa-store" label="Store status" value={dashboard.store?.status || "Not available"} detail={dashboard.store?.city || "Store profile coming soon."} />
-                <DashboardCard icon="fa-id-card" label="Seller ID" value={dashboard.seller.id} detail={`Registered ${new Date(dashboard.seller.createdAt).toLocaleDateString("en-NP")}`} />
-              </div>
-              <div className="dashboard-actions"><strong>Quick actions</strong><div><button disabled>Manage Store <small>Next phase</small></button><button disabled>Add Product <small>Next phase</small></button><button disabled>Manage Inventory <small>Next phase</small></button><button disabled>View Orders <small>Next phase</small></button></div></div>
-            </>}
+            {loading ? <div className="dashboard-state">Loading dashboard...</div> : dashboard && (
+              view === "profile" ? (
+                <StoreProfile
+                  storeId={dashboard.store?.id}
+                  initialStore={dashboard.store}
+                  onBack={() => setView("dashboard")}
+                  onUpdate={(updatedStore) => {
+                    setDashboard((current) => current ? { ...current, store: updatedStore } : current);
+                  }}
+                />
+              ) : (
+                <>
+                  <div className="dashboard-welcome"><span>Welcome, {dashboard.seller.name}</span><small>{dashboard.store?.name || "Store not created"}</small></div>
+                  <div className="dashboard-grid">
+                    <DashboardCard icon="fa-shield-halved" label="Verification" value={statusLabel} tone={status} detail={status === "rejected" ? dashboard.seller.verification?.rejectionReason : status === "pending" ? "Your application is under review." : "Seller verification complete."} />
+                    <DashboardCard icon="fa-box" label="Products" value={dashboard.stats.products} detail="Available in later phase" />
+                    <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory || "Coming soon"} detail="Inventory management is not active yet." />
+                    <DashboardCard icon="fa-receipt" label="Orders" value={dashboard.stats.orders} detail="Seller orders arrive in a later phase." />
+                    <DashboardCard icon="fa-store" label="Store status" value={dashboard.store?.status || "Not available"} detail={dashboard.store?.city || "Store profile coming soon."} />
+                    <DashboardCard icon="fa-id-card" label="Seller ID" value={dashboard.seller.id} detail={`Registered ${new Date(dashboard.seller.createdAt).toLocaleDateString("en-NP")}`} />
+                  </div>
+                  <div className="dashboard-actions">
+                    <strong>Quick actions</strong>
+                    <div>
+                      <button
+                        type="button"
+                        className="dashboard-action-active"
+                        onClick={() => setView("profile")}
+                        disabled={!dashboard.store}
+                      >
+                        Manage Store <small>{dashboard.store ? "View & edit profile" : "Store not created"}</small>
+                      </button>
+                      <button disabled>Add Product <small>Next phase</small></button>
+                      <button disabled>Manage Inventory <small>Next phase</small></button>
+                      <button disabled>View Orders <small>Next phase</small></button>
+                    </div>
+                  </div>
+                </>
+              )
+            )}
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
+  const [store, setStore] = useState(initialStore || null);
+  const [loading, setLoading] = useState(!initialStore && Boolean(storeId));
+  const [fetchError, setFetchError] = useState("");
+  const [form, setForm] = useState({
+    name: initialStore?.name || "",
+    phone: initialStore?.phone || "",
+    email: initialStore?.email || "",
+    city: initialStore?.city || "",
+    district: initialStore?.district || "",
+    address: initialStore?.address || "",
+    openingHours: initialStore?.openingHours || "",
+    description: initialStore?.description || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const loadStore = async (id) => {
+    if (!id) return;
+    setLoading(true);
+    setFetchError("");
+    try {
+      const response = await fetch(`${API}/stores/${encodeURIComponent(id)}`);
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || "Unable to load store profile.");
+      setStore(body.store);
+      setForm({
+        name: body.store.name || "",
+        phone: body.store.phone || "",
+        email: body.store.email || "",
+        city: body.store.city || "",
+        district: body.store.district || "",
+        address: body.store.address || "",
+        openingHours: body.store.openingHours || "",
+        description: body.store.description || "",
+      });
+    } catch (err) {
+      setFetchError(err.message || "Unable to load store.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (storeId) {
+      loadStore(storeId);
+    }
+  }, [storeId]);
+
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (success) setSuccess("");
+    if (error) setError("");
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+    if (!store?.id) return;
+    setError("");
+    setSuccess("");
+    setSaving(true);
+
+    try {
+      const payload = {
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        city: form.city.trim(),
+        district: form.district.trim(),
+        address: form.address.trim(),
+        openingHours: form.openingHours.trim(),
+        description: form.description.trim(),
+      };
+
+      const response = await fetch(`${API}/stores/${encodeURIComponent(store.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        throw new Error(body.message || "Failed to update store profile.");
+      }
+
+      setStore(body.store);
+      setForm({
+        name: body.store.name || "",
+        phone: body.store.phone || "",
+        email: body.store.email || "",
+        city: body.store.city || "",
+        district: body.store.district || "",
+        address: body.store.address || "",
+        openingHours: body.store.openingHours || "",
+        description: body.store.description || "",
+      });
+      setSuccess("Store profile updated successfully.");
+      if (onUpdate) onUpdate(body.store);
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred while saving.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="store-profile">
+        <div className="store-profile-header">
+          <h3>Store Profile</h3>
+          <button type="button" className="store-profile-back" onClick={onBack}>
+            <i className="fa fa-arrow-left" /> Back to Dashboard
+          </button>
+        </div>
+        <div className="dashboard-state">Loading store profile...</div>
+      </div>
+    );
+  }
+
+  if (fetchError || !store) {
+    return (
+      <div className="store-profile">
+        <div className="store-profile-header">
+          <h3>Store Profile</h3>
+          <button type="button" className="store-profile-back" onClick={onBack}>
+            <i className="fa fa-arrow-left" /> Back to Dashboard
+          </button>
+        </div>
+        <div className="dashboard-state dashboard-error">
+          <i className="fa fa-circle-exclamation" />
+          <strong>Store Profile Unavailable</strong>
+          <span>{fetchError || "No store is associated with this seller account."}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const storeStatus = store.status || "pending";
+  const storeStatusLabel = {
+    pending: "Pending Review",
+    approved: "Active",
+    rejected: "Inactive",
+  }[storeStatus] || storeStatus;
+
+  return (
+    <div className="store-profile">
+      <div className="store-profile-header">
+        <div>
+          <h3>Manage Store Profile</h3>
+          <small style={{ color: "var(--gray-mid)" }}>View and update your store details on VASTAAR</small>
+        </div>
+        <button type="button" className="store-profile-back" onClick={onBack}>
+          <i className="fa fa-arrow-left" /> Back to Dashboard
+        </button>
+      </div>
+
+      <div className="store-readonly-grid">
+        <div className="store-readonly-item">
+          <span>Store Status</span>
+          <div>
+            <span className={`store-status-pill ${storeStatus}`}>{storeStatusLabel}</span>
+          </div>
+        </div>
+        <div className="store-readonly-item">
+          <span>Store ID</span>
+          <strong>{store.id}</strong>
+        </div>
+        <div className="store-readonly-item">
+          <span>Seller ID</span>
+          <strong>{store.sellerId}</strong>
+        </div>
+        <div className="store-readonly-item">
+          <span>Created</span>
+          <strong>{new Date(store.createdAt).toLocaleDateString("en-NP")}</strong>
+        </div>
+      </div>
+
+      {success && (
+        <div className="store-profile-success" role="status">
+          <i className="fa fa-circle-check" />
+          <span>{success}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="store-profile-error" role="alert">
+          <i className="fa fa-circle-exclamation" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form className="store-profile-form" onSubmit={handleSave}>
+        <div className="seller-form-section" style={{ borderTop: "none", paddingTop: 0 }}>
+          <div className="seller-fields">
+            <label>
+              Store Name <span style={{ color: "var(--crimson)" }}>*</span>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                required
+                minLength={2}
+                maxLength={100}
+                placeholder="e.g. Kathmandu Heritage Crafts"
+              />
+            </label>
+            <label>
+              Store Phone <span style={{ color: "var(--crimson)" }}>*</span>
+              <input
+                type="tel"
+                inputMode="tel"
+                value={form.phone}
+                onChange={(event) => updateField("phone", event.target.value)}
+                required
+                minLength={7}
+                maxLength={20}
+                placeholder="e.g. 9812345678"
+              />
+            </label>
+            <label>
+              Store Contact Email <span className="optional">(optional)</span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                maxLength={100}
+                placeholder="e.g. store@example.com"
+              />
+            </label>
+            <label>
+              City <span style={{ color: "var(--crimson)" }}>*</span>
+              <input
+                type="text"
+                value={form.city}
+                onChange={(event) => updateField("city", event.target.value)}
+                required
+                maxLength={60}
+                placeholder="e.g. Kathmandu"
+              />
+            </label>
+            <label>
+              District <span className="optional">(optional)</span>
+              <input
+                type="text"
+                value={form.district}
+                onChange={(event) => updateField("district", event.target.value)}
+                maxLength={60}
+                placeholder="e.g. Kathmandu, Lalitpur, Kaski"
+              />
+            </label>
+            <label>
+              Opening Hours <span className="optional">(optional)</span>
+              <input
+                type="text"
+                value={form.openingHours}
+                onChange={(event) => updateField("openingHours", event.target.value)}
+                maxLength={100}
+                placeholder="e.g. 10:00 AM - 7:30 PM, Sun-Fri"
+              />
+            </label>
+          </div>
+          <label>
+            Store Address <span style={{ color: "var(--crimson)" }}>*</span>
+            <textarea
+              rows={2}
+              value={form.address}
+              onChange={(event) => updateField("address", event.target.value)}
+              required
+              maxLength={200}
+              placeholder="e.g. New Road, Ward 22, Kathmandu"
+            />
+          </label>
+          <label>
+            Store Description <span className="optional">(optional)</span>
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(event) => updateField("description", event.target.value)}
+              maxLength={500}
+              placeholder="Tell customers about your store, craft, materials, and specialties..."
+            />
+          </label>
+        </div>
+
+        <div className="store-profile-actions">
+          <button type="button" className="store-profile-back" onClick={onBack}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="checkout-btn"
+            style={{ width: "auto", minWidth: "160px", padding: "0 24px" }}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save Changes"}{" "}
+            <i className={`fa ${saving ? "fa-spinner fa-spin" : "fa-check"}`} />
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
