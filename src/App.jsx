@@ -71,6 +71,197 @@ const arrivals = [
 
 const money = (value) => `Rs. ${Number(value).toLocaleString("en-NP")}`;
 
+const NEPAL_PROVINCES = [
+  "Koshi",
+  "Madhesh",
+  "Bagmati",
+  "Gandaki",
+  "Lumbini",
+  "Karnali",
+  "Sudurpashchim",
+];
+
+const NEPAL_LOCATION_DATA = {
+  Koshi: {
+    districts: {
+      Bhojpur: ["Bhojpur", "Shadananda"],
+      Dhankuta: ["Dhankuta", "Pakhribas"],
+      Ilam: ["Ilam", "Suryodaya", "Deumai", "Mai"],
+      Jhapa: ["Birtamod", "Damak", "Bhadrapur", "Mechinagar", "Kankai", "Arjundhara", "Shivasatakshi", "Gauradaha"],
+      Khotang: ["Diktel", "Halesi Tuwachung"],
+      Morang: ["Biratnagar", "Belbari", "Pathari Sanischare", "Sundarharaicha", "Urlabari", "Ratuwamai", "Sunbarsi"],
+      Okhaldhunga: ["Siddhicharan"],
+      Panchthar: ["Phidim"],
+      Sankhuwasabha: ["Khandbari", "Chainpur", "Madi", "Dharmadevi"],
+      Solukhumbu: ["Salleri"],
+      Sunsari: ["Dharan", "Itahari", "Inaruwa", "Duhabi", "Ramdhuni", "Barahachhetra"],
+      Taplejung: ["Phungling"],
+      Terhathum: ["Myanglung", "Laligurans"],
+      Udayapur: ["Gaighat", "Katari", "Chaudandigadhi", "Belaka"],
+    },
+  },
+  Madhesh: {
+    districts: {
+      Bara: ["Kalaiya", "Jeetpur Simara", "Kolhabi", "Nijgadh", "Mahagadhimai", "Simraungadh"],
+      Dhanusha: ["Janakpur", "Mithila", "Dhanusadham", "Chhirreshwarnath", "Ganeshman Charnath", "Sabaila", "Sahidnagar"],
+      Mahottari: ["Jaleshwar", "Bardibas", "Gaushala", "Bhangaha", "Loharpatti", "Manara Shisawa"],
+      Parsa: ["Birgunj", "Pokhariya", "Bahudaramai", "Parsagadhi"],
+      Rautahat: ["Gaur", "Chandrapur", "Garuda", "Brindaban", "Katahariya", "Dewahi Gonahi"],
+      Saptari: ["Rajbiraj", "Kanchanrup", "Dakneshwari", "Bodebarsain", "Khadak", "Surunga", "Hanumannagar Kankalini"],
+      Sarlahi: ["Malangwa", "Lalbandi", "Harion", "Barahathwa", "Ishworpur", "Godaita", "Kabilasi"],
+      Siraha: ["Lahan", "Siraha", "Golbazar", "Mirchaiya", "Kalyanpur", "Dhangadhimai", "Sukhipur"],
+    },
+  },
+  Bagmati: {
+    districts: {
+      Bhaktapur: ["Bhaktapur", "Madhyapur Thimi", "Suryabinayak", "Changunarayan"],
+      Chitwan: ["Bharatpur", "Ratnanagar", "Khairahani", "Rapti", "Kalika", "Madi"],
+      Dhading: ["Nilkantha", "Dhunibeshi"],
+      Dolakha: ["Bhimeshwar", "Jiri"],
+      Kathmandu: ["Kathmandu", "Kirtipur", "Budhanilkantha", "Tokha", "Tarakeshwar", "Chandragiri", "Nagarjun", "Gokarneshwar", "Dakshinkali", "Shankharapur"],
+      Kavrepalanchok: ["Banepa", "Dhulikhel", "Panauti", "Mandandeupur", "Namobuddha", "Panchkhal"],
+      Lalitpur: ["Lalitpur", "Mahalaxmi", "Godawari"],
+      Makwanpur: ["Hetauda", "Thaha"],
+      Nuwakot: ["Bidur", "Belkotgadhi"],
+      Ramechhap: ["Manthali", "Ramechhap"],
+      Rasuwa: ["Dhunche"],
+      Sindhuli: ["Kamalamai", "Dudhauli"],
+      Sindhupalchok: ["Chautara", "Melamchi", "Barhabise"],
+    },
+  },
+  Gandaki: {
+    districts: {
+      Baglung: ["Baglung", "Galkot", "Jaimini", "Dhorpatan"],
+      Gorkha: ["Gorkha", "Palungtar"],
+      Kaski: ["Pokhara", "Lekhnath"],
+      Lamjung: ["Besishahar", "Sundarbazar", "Rainas", "Madhya Nepal"],
+      Manang: ["Chame"],
+      Mustang: ["Jomsom"],
+      Myagdi: ["Beni"],
+      Nawalpur: ["Kawasoti", "Gaidakot", "Devchuli", "Madhyabindu"],
+      Parbat: ["Kusma", "Phalebas"],
+      Syangja: ["Putalibazar", "Waling", "Galyang", "Chapakot", "Bhirkot"],
+      Tanahun: ["Damauli", "Shuklagandaki", "Bhimad", "Bhanu"],
+    },
+  },
+  Lumbini: {
+    districts: {
+      Arghakhanchi: ["Sandhikharka", "Sitganga", "Bhumikasthan"],
+      Banke: ["Nepalgunj", "Kohalpur"],
+      Bardiya: ["Gulariya", "Rajapur", "Bansgadhi", "Barbardiya", "Thakurbaba", "Madhuwan"],
+      Dang: ["Ghorahi", "Tulsipur", "Lamahi"],
+      "Eastern Rukum": ["Rukumkot"],
+      Gulmi: ["Tamghas", "Musikot"],
+      Kapilvastu: ["Kapilvastu", "Taulihawa", "Banganga", "Shivaraj", "Buddhabhumi", "Krishnanagar", "Maharajgunj"],
+      "Nawalparasi West": ["Ramgram", "Sunwal", "Bardaghat"],
+      Palpa: ["Tansen", "Rampur"],
+      Pyuthan: ["Pyuthan", "Swargadwari"],
+      Rolpa: ["Liwang"],
+      Rupandehi: ["Butwal", "Siddharthanagar", "Tilottama", "Sainamaina", "Devdaha", "Lumbini Sanskritik"],
+    },
+  },
+  Karnali: {
+    districts: {
+      Dailekh: ["Narayan", "Dullu", "Chamunda Bindrasaini", "Aathbis"],
+      Dolpa: ["Dunai", "Tripurasundari", "Thuli Bheri"],
+      Humla: ["Simikot"],
+      Jajarkot: ["Khalanga", "Chhedagad", "Nalgad"],
+      Jumla: ["Chandannath"],
+      Kalikot: ["Manma", "Raskot", "Tilagufa"],
+      Mugu: ["Gamgadhi"],
+      Salyan: ["Sharada", "Bagchaur", "Bangad Kupinde"],
+      Surkhet: ["Birendranagar", "Gurbhakot", "Bheriganga", "Panchapuri", "Lekbeshi"],
+      "Western Rukum": ["Musikot", "Chaurjahari", "Aathbiskot"],
+    },
+  },
+  Sudurpashchim: {
+    districts: {
+      Achham: ["Mangalsen", "Sanphebagar", "Kamalbazar", "Panchadeval Binayak"],
+      Baitadi: ["Dasharathchand", "Patan", "Melauli", "Purchaudi"],
+      Bajhang: ["Jayaprithvi", "Bungal"],
+      Bajura: ["Martadi", "Budhiganga", "Budhinanda", "Triveni"],
+      Dadeldhura: ["Amargadhi", "Parshuram"],
+      Darchula: ["Khalanga", "Shailyashikhar"],
+      Doti: ["Dipayal Silgadhi", "Shikhar"],
+      Kailali: ["Dhangadhi", "Tikapur", "Godawari", "Lamki Chuha", "Ghodaghodi", "Bhajani", "Gauriganga"],
+      Kanchanpur: ["Bhimdatta", "Bedkot", "Shuklaphanta", "Krishnapur", "Punarbas", "Belauri", "Mahakali"],
+    },
+  },
+};
+
+const DEFAULT_CUSTOMER_LOCATION = {
+  country: "Nepal",
+  province: "",
+  district: "",
+  city: "",
+};
+
+function sanitizeCustomerLocation(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return { ...DEFAULT_CUSTOMER_LOCATION };
+  }
+
+  const country = "Nepal";
+  let province = "";
+  if (typeof data.province === "string" && data.province.trim()) {
+    const pTrim = data.province.trim();
+    const matchedP = NEPAL_PROVINCES.find(
+      (p) => p.toLowerCase() === pTrim.toLowerCase(),
+    );
+    if (matchedP) {
+      province = matchedP;
+    }
+  }
+
+  if (!province) {
+    return { country, province: "", district: "", city: "" };
+  }
+
+  const provinceData = NEPAL_LOCATION_DATA[province];
+  const validDistricts = Object.keys(provinceData.districts);
+
+  let district = "";
+  if (typeof data.district === "string" && data.district.trim()) {
+    const dTrim = data.district.trim();
+    const matchedD = validDistricts.find(
+      (d) => d.toLowerCase() === dTrim.toLowerCase(),
+    );
+    if (matchedD) {
+      district = matchedD;
+    }
+  }
+
+  let city = "";
+  if (district) {
+    const validCities = provinceData.districts[district] || [];
+    if (typeof data.city === "string" && data.city.trim()) {
+      const cTrim = data.city.trim();
+      const matchedC = validCities.find(
+        (c) => c.toLowerCase() === cTrim.toLowerCase(),
+      );
+      if (matchedC) {
+        city = matchedC;
+      }
+    }
+  } else if (typeof data.city === "string" && data.city.trim()) {
+    const cTrim = data.city.trim();
+    const allProvCities = Object.values(provinceData.districts).flat();
+    const matchedC = allProvCities.find(
+      (c) => c.toLowerCase() === cTrim.toLowerCase(),
+    );
+    if (matchedC) {
+      city = matchedC;
+    }
+  }
+
+  return {
+    country,
+    province,
+    district,
+    city,
+  };
+}
+
 function App() {
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState("");
@@ -82,6 +273,16 @@ function App() {
   const [wishlist, setWishlist] = useState(() =>
     JSON.parse(localStorage.getItem("vastaar-wishlist") || "[]"),
   );
+  const [customerLocationModal, setCustomerLocationModal] = useState(false);
+  const [customerLocation, setCustomerLocation] = useState(() => {
+    try {
+      const raw = localStorage.getItem("vastaar_customer_location");
+      if (!raw) return { ...DEFAULT_CUSTOMER_LOCATION };
+      return sanitizeCustomerLocation(JSON.parse(raw));
+    } catch (err) {
+      return { ...DEFAULT_CUSTOMER_LOCATION };
+    }
+  });
   const [drawer, setDrawer] = useState(false);
   const [checkout, setCheckout] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -98,6 +299,20 @@ function App() {
     setToast(message);
     window.clearTimeout(window.toastTimer);
     window.toastTimer = window.setTimeout(() => setToast(""), 2600);
+  };
+  const updateCustomerLocation = (nextLocation) => {
+    const sanitized = sanitizeCustomerLocation(nextLocation);
+    setCustomerLocation(sanitized);
+    const locationLabel = sanitized.city
+      ? `${sanitized.city}, ${sanitized.province}`
+      : sanitized.province
+      ? `${sanitized.province}, Nepal`
+      : "Nepal";
+    showToast(`Location updated to ${locationLabel}`);
+  };
+  const clearCustomerLocation = () => {
+    setCustomerLocation({ ...DEFAULT_CUSTOMER_LOCATION });
+    showToast("Location reset to Nepal");
   };
   const loadProducts = async (search = query, category = activeCategory) => {
     setLoading(true);
@@ -122,6 +337,16 @@ function App() {
   useEffect(() => {
     localStorage.setItem("vastaar-wishlist", JSON.stringify(wishlist));
   }, [wishlist]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "vastaar_customer_location",
+        JSON.stringify(customerLocation),
+      );
+    } catch (err) {
+      // Gracefully handle restricted storage
+    }
+  }, [customerLocation]);
   useEffect(() => {
     const id = window.setInterval(
       () =>
@@ -203,6 +428,8 @@ function App() {
         wishlistCount={wishlist.length}
         openCart={() => setDrawer(true)}
         setCategory={setCategory}
+        customerLocation={customerLocation}
+        openLocationModal={() => setCustomerLocationModal(true)}
       />
       <Hero
         slide={slide}
@@ -332,12 +559,284 @@ function App() {
       {sellerDashboard && (
         <SellerDashboard onClose={() => setSellerDashboard(false)} />
       )}
+      {customerLocationModal && (
+        <CustomerLocationModal
+          location={customerLocation}
+          onClose={() => setCustomerLocationModal(false)}
+          onSave={(loc) => {
+            updateCustomerLocation(loc);
+            setCustomerLocationModal(false);
+          }}
+          onClear={() => {
+            clearCustomerLocation();
+            setCustomerLocationModal(false);
+          }}
+        />
+      )}
       {toast && (
         <div className="toast show">
           <i className="fa fa-check-circle" /> {toast}
         </div>
       )}
     </>
+  );
+}
+
+function CustomerLocationModal({ location, onClose, onSave, onClear }) {
+  const [selectedProvince, setSelectedProvince] = useState(
+    location?.province || "",
+  );
+  const [selectedDistrict, setSelectedDistrict] = useState(
+    location?.district || "",
+  );
+  const [selectedCity, setSelectedCity] = useState(location?.city || "");
+
+  const availableDistricts = useMemo(() => {
+    if (!selectedProvince || !NEPAL_LOCATION_DATA[selectedProvince]) {
+      return [];
+    }
+    return Object.keys(NEPAL_LOCATION_DATA[selectedProvince].districts);
+  }, [selectedProvince]);
+
+  const availableCities = useMemo(() => {
+    if (!selectedProvince || !NEPAL_LOCATION_DATA[selectedProvince]) {
+      return [];
+    }
+    const provinceDistricts = NEPAL_LOCATION_DATA[selectedProvince].districts;
+    if (selectedDistrict && provinceDistricts[selectedDistrict]) {
+      return provinceDistricts[selectedDistrict];
+    }
+    return Object.values(provinceDistricts).flat();
+  }, [selectedProvince, selectedDistrict]);
+
+  const handleProvinceChange = (province) => {
+    setSelectedProvince(province);
+    if (!province || !NEPAL_LOCATION_DATA[province]) {
+      setSelectedDistrict("");
+      setSelectedCity("");
+      return;
+    }
+    const newDistricts = Object.keys(NEPAL_LOCATION_DATA[province].districts);
+    if (!newDistricts.includes(selectedDistrict)) {
+      setSelectedDistrict("");
+      setSelectedCity("");
+    } else if (selectedDistrict) {
+      const validCities =
+        NEPAL_LOCATION_DATA[province].districts[selectedDistrict] || [];
+      if (!validCities.includes(selectedCity)) {
+        setSelectedCity("");
+      }
+    }
+  };
+
+  const handleDistrictChange = (district) => {
+    setSelectedDistrict(district);
+    if (district && selectedProvince && NEPAL_LOCATION_DATA[selectedProvince]) {
+      const validCities =
+        NEPAL_LOCATION_DATA[selectedProvince].districts[district] || [];
+      if (!validCities.includes(selectedCity)) {
+        setSelectedCity("");
+      }
+    } else if (!district) {
+      if (selectedProvince && NEPAL_LOCATION_DATA[selectedProvince]) {
+        const allCities = Object.values(
+          NEPAL_LOCATION_DATA[selectedProvince].districts,
+        ).flat();
+        if (!allCities.includes(selectedCity)) {
+          setSelectedCity("");
+        }
+      } else {
+        setSelectedCity("");
+      }
+    }
+  };
+
+  const handleCityChange = (city) => {
+    setSelectedCity(city);
+    if (
+      city &&
+      selectedProvince &&
+      !selectedDistrict &&
+      NEPAL_LOCATION_DATA[selectedProvince]
+    ) {
+      const provDistricts = NEPAL_LOCATION_DATA[selectedProvince].districts;
+      for (const [distName, cities] of Object.entries(provDistricts)) {
+        if (cities.includes(city)) {
+          setSelectedDistrict(distName);
+          break;
+        }
+      }
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const sanitized = sanitizeCustomerLocation({
+      country: "Nepal",
+      province: selectedProvince,
+      district: selectedDistrict,
+      city: selectedCity,
+    });
+    onSave(sanitized);
+  };
+
+  const handleReset = () => {
+    setSelectedProvince("");
+    setSelectedDistrict("");
+    setSelectedCity("");
+    onClear();
+  };
+
+  const isLocationSet = Boolean(
+    location?.province || location?.city || location?.district,
+  );
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="location-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="location-modal-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="modal-close"
+          onClick={onClose}
+          aria-label="Close location selector"
+        >
+          <i className="fa fa-xmark" />
+        </button>
+        <p className="eyebrow">YOUR LOCATION IN NEPAL</p>
+        <h2 id="location-modal-title">Choose your location</h2>
+        <p className="location-modal-desc">
+          Choose your location to personalize your VASTAAR shopping experience across Nepal.
+        </p>
+
+        <div className={`location-active-card ${isLocationSet ? "active" : ""}`}>
+          <div className="location-active-icon">
+            <i
+              className={
+                isLocationSet ? "fa fa-location-dot" : "fa fa-earth-asia"
+              }
+            />
+          </div>
+          <div className="location-active-info">
+            <span className="location-active-label">
+              {isLocationSet ? "Current Selected Location" : "Default Location"}
+            </span>
+            <strong>
+              {isLocationSet
+                ? [
+                    location.city,
+                    location.district ? `${location.district} District` : "",
+                    location.province,
+                    location.country,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")
+                : "Nepal (Countrywide)"}
+            </strong>
+          </div>
+          {isLocationSet && (
+            <button
+              type="button"
+              className="location-reset-btn"
+              onClick={handleReset}
+              title="Reset location to default Nepal"
+            >
+              <i className="fa fa-rotate-left" /> Reset
+            </button>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="location-form">
+          <div className="location-form-fields">
+            <label>
+              Country
+              <input
+                type="text"
+                value="Nepal"
+                disabled
+                readOnly
+                className="location-country-input"
+              />
+            </label>
+
+            <label>
+              Province
+              <select
+                value={selectedProvince}
+                onChange={(e) => handleProvinceChange(e.target.value)}
+                aria-label="Select province"
+              >
+                <option value="">Select Province (optional)</option>
+                {NEPAL_PROVINCES.map((prov) => (
+                  <option key={prov} value={prov}>
+                    {prov}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              District
+              <select
+                value={selectedDistrict}
+                onChange={(e) => handleDistrictChange(e.target.value)}
+                disabled={!selectedProvince}
+                aria-label="Select district"
+              >
+                <option value="">
+                  {selectedProvince
+                    ? "Select District (optional)"
+                    : "Select province first"}
+                </option>
+                {availableDistricts.map((dist) => (
+                  <option key={dist} value={dist}>
+                    {dist}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              City / Municipality
+              <select
+                value={selectedCity}
+                onChange={(e) => handleCityChange(e.target.value)}
+                disabled={!selectedProvince}
+                aria-label="Select city"
+              >
+                <option value="">
+                  {selectedProvince
+                    ? "Select City (optional)"
+                    : "Select province first"}
+                </option>
+                {availableCities.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="location-modal-actions">
+            <button
+              type="button"
+              className="location-cancel-btn"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="location-save-btn">
+              <i className="fa fa-check" /> Save Location
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
@@ -358,7 +857,26 @@ function Header({
   wishlistCount,
   openCart,
   setCategory,
+  customerLocation,
+  openLocationModal,
 }) {
+  const locationTooltip = customerLocation?.province
+    ? [
+        customerLocation.city,
+        customerLocation.district ? `${customerLocation.district} District` : "",
+        customerLocation.province,
+        customerLocation.country,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "Select your delivery location in Nepal";
+
+  const locationDisplay = customerLocation?.city
+    ? `${customerLocation.city}, ${customerLocation.province}`
+    : customerLocation?.province
+    ? `${customerLocation.province}`
+    : "Nepal";
+
   return (
     <header className="header">
       <div className="header-main">
@@ -369,6 +887,19 @@ function Header({
             <div className="logo-tagline">Nepal's Fashion</div>
           </div>
         </a>
+        <button
+          type="button"
+          className="hdr-location-btn"
+          onClick={openLocationModal}
+          title={locationTooltip}
+          aria-label="Select delivery location in Nepal"
+        >
+          <i className="fa fa-location-dot" />
+          <div className="hdr-location-info">
+            <span className="hdr-location-caption">Deliver to</span>
+            <span className="hdr-location-val">{locationDisplay}</span>
+          </div>
+        </button>
         <div className="search-wrap">
           <input
             value={query}
@@ -1253,16 +1784,6 @@ function SellerDashboard({ onClose }) {
     </div>
   );
 }
-
-const NEPAL_PROVINCES = [
-  "Koshi",
-  "Madhesh",
-  "Bagmati",
-  "Gandaki",
-  "Lumbini",
-  "Karnali",
-  "Sudurpashchim",
-];
 
 function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
   const [store, setStore] = useState(initialStore || null);
