@@ -314,8 +314,9 @@ app.get('/api/sellers/:id/dashboard', async (req, res, next) => {
     if (!seller) return res.status(404).json({ message: 'Seller not found.' });
     const store = data.stores.find((item) => item.sellerId === seller.id) || null;
     const sellerProducts = data.products.filter((item) => item.sellerId === seller.id);
-    const sellerInventory = data.inventory.filter((item) => item.storeId === store?.id || sellerProducts.some((product) => product.id === item.productId));
-    const sellerOrders = data.orders.filter((order) => order.items?.some((item) => item.sellerId === seller.id || item.storeId === store?.id));
+    const sellerProductIds = new Set(sellerProducts.map((p) => p.id));
+    const sellerInventory = data.inventory.filter((item) => item.storeId === store?.id || sellerProductIds.has(item.productId));
+    const sellerOrders = data.orders.filter((order) => order.items?.some((item) => item.sellerId === seller.id || (store && item.storeId === store.id) || sellerProductIds.has(item.productId || item.id)));
     res.json({
       seller: {
         id: seller.id,
@@ -702,17 +703,311 @@ app.patch('/api/products/:id/inventory', async (req, res, next) => {
     res.json({ inventory: updatedInventory });
   } catch (error) { next(error); }
 });
+function extractSellerOrderItems(order, sellerId, storeId, productMap) {
+  if (!Array.isArray(order.items)) return [];
+  return order.items
+    .filter((item) => {
+      const pid = item.productId || item.id;
+      return item.sellerId === sellerId || (storeId && item.storeId === storeId) || productMap.has(pid);
+    })
+    .map((item) => {
+      const pid = item.productId || item.id;
+      const prod = productMap.get(pid);
+      return {
+        productId: pid,
+        name: item.name || prod?.name || 'Product',
+        price: Number(item.price !== undefined ? item.price : prod?.price || 0),
+        quantity: Number(item.quantity || 1),
+        sellerId: sellerId,
+        storeId: item.storeId || prod?.storeId || storeId || null
+      };
+    });
+}
+app.get('/api/sellers/:sellerId/orders', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.sellerId);
+    if (!seller) {
+      return res.status(404).json({ message: 'Seller not found.' });
+    }
+
+    const sellerProducts = data.products.filter((item) => item.sellerId === seller.id);
+    const productMap = new Map(sellerProducts.map((p) => [p.id, p]));
+    const store = data.stores.find((s) => s.sellerId === seller.id);
+
+    const sellerOrders = [];
+    for (const order of data.orders) {
+      const sellerItems = extractSellerOrderItems(order, seller.id, store?.id, productMap);
+      if (sellerItems.length > 0) {
+        const subtotal = sellerItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
+        const status = order.sellerStatuses?.[seller.id] || sellerItems[0]?.status || order.status || 'confirmed';
+        sellerOrders.push({
+          id: order.id,
+          orderId: order.id,
+          sellerId: seller.id,
+          storeId: store?.id || null,
+          customer: order.customer ? {
+            name: order.customer.name || '',
+            email: order.customer.email || '',
+            phone: order.customer.phone || '',
+            address: order.customer.address || '',
+            city: order.customer.city || '',
+            postalCode: order.customer.postalCode || ''
+          } : {},
+          items: sellerItems,
+          subtotal,
+          status,
+          paymentMethod: order.paymentMethod || 'Cash on Delivery',
+          createdAt: order.createdAt
+        });
+      }
+    }
+
+    res.json({ orders: sellerOrders });
+  } catch (error) { next(error); }
+});
+app.get('/api/sellers/:sellerId/orders/:orderId', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.sellerId);
+    if (!seller) {
+      return res.status(404).json({ message: 'Seller not found.' });
+    }
+
+    const order = data.orders.find((item) => item.id === req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+
+    const sellerProducts = data.products.filter((item) => item.sellerId === seller.id);
+    const productMap = new Map(sellerProducts.map((p) => [p.id, p]));
+    const store = data.stores.find((s) => s.sellerId === seller.id);
+
+    const sellerItems = extractSellerOrderItems(order, seller.id, store?.id, productMap);
+    if (sellerItems.length === 0) {
+      return res.status(404).json({ message: 'Order not found for this seller.' });
+    }
+
+    const subtotal = sellerItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
+    const status = order.sellerStatuses?.[seller.id] || sellerItems[0]?.status || order.status || 'confirmed';
+
+    const sellerOrder = {
+      id: order.id,
+      orderId: order.id,
+      sellerId: seller.id,
+      storeId: store?.id || null,
+      customer: order.customer ? {
+        name: order.customer.name || '',
+        email: order.customer.email || '',
+        phone: order.customer.phone || '',
+        address: order.customer.address || '',
+        city: order.customer.city || '',
+        postalCode: order.customer.postalCode || ''
+      } : {},
+      items: sellerItems,
+      subtotal,
+      status,
+      paymentMethod: order.paymentMethod || 'Cash on Delivery',
+      createdAt: order.createdAt
+    };
+
+    res.json({ order: sellerOrder });
+  } catch (error) { next(error); }
+});
+app.patch('/api/sellers/:sellerId/orders/:orderId/status', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.sellerId);
+    if (!seller) {
+      return res.status(404).json({ message: 'Seller not found.' });
+    }
+
+    const orderIndex = data.orders.findIndex((item) => item.id === req.params.orderId);
+    if (orderIndex === -1) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+    const order = data.orders[orderIndex];
+
+    const sellerProducts = data.products.filter((item) => item.sellerId === seller.id);
+    const productMap = new Map(sellerProducts.map((p) => [p.id, p]));
+    const store = data.stores.find((s) => s.sellerId === seller.id);
+
+    const sellerItems = extractSellerOrderItems(order, seller.id, store?.id, productMap);
+    if (sellerItems.length === 0) {
+      return res.status(404).json({ message: 'Order not found for this seller.' });
+    }
+
+    const rawStatus = req.body?.status;
+    if (typeof rawStatus !== 'string' || !rawStatus.trim()) {
+      return res.status(400).json({ message: 'Status is required.' });
+    }
+    const requestedStatus = rawStatus.trim().toLowerCase();
+    const allowedStatuses = ['placed', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!allowedStatuses.includes(requestedStatus)) {
+      return res.status(400).json({ message: 'Invalid order status. Allowed values: PLACED, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED.' });
+    }
+
+    const currentStatus = (order.sellerStatuses?.[seller.id] || order.status || 'confirmed').toLowerCase();
+    if (currentStatus === 'delivered' && requestedStatus !== 'delivered') {
+      return res.status(400).json({ message: 'Delivered orders cannot be updated.' });
+    }
+    if (currentStatus === 'cancelled' && requestedStatus !== 'cancelled') {
+      return res.status(400).json({ message: 'Cancelled orders cannot be updated.' });
+    }
+
+    order.sellerStatuses = { ...(order.sellerStatuses || {}), [seller.id]: requestedStatus };
+    if (Array.isArray(order.items)) {
+      for (const item of order.items) {
+        const pid = item.productId || item.id;
+        if (item.sellerId === seller.id || (store && item.storeId === store.id) || productMap.has(pid)) {
+          item.status = requestedStatus;
+        }
+      }
+    }
+
+    const allOrderSellerIds = new Set();
+    let allSameStatus = true;
+    for (const item of order.items || []) {
+      const pid = item.productId || item.id;
+      const p = data.products.find((prod) => prod.id === pid);
+      const sId = item.sellerId || p?.sellerId;
+      if (sId) allOrderSellerIds.add(sId);
+      const itStatus = (item.status || order.status || 'confirmed').toLowerCase();
+      if (itStatus !== requestedStatus) {
+        allSameStatus = false;
+      }
+    }
+    if (allOrderSellerIds.size <= 1 || allSameStatus) {
+      order.status = requestedStatus;
+    }
+
+    await writeData(data);
+
+    const subtotal = sellerItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
+    const updatedSellerOrder = {
+      id: order.id,
+      orderId: order.id,
+      sellerId: seller.id,
+      storeId: store?.id || null,
+      customer: order.customer ? {
+        name: order.customer.name || '',
+        email: order.customer.email || '',
+        phone: order.customer.phone || '',
+        address: order.customer.address || '',
+        city: order.customer.city || '',
+        postalCode: order.customer.postalCode || ''
+      } : {},
+      items: sellerItems.map((it) => ({ ...it, status: requestedStatus })),
+      subtotal,
+      status: requestedStatus,
+      paymentMethod: order.paymentMethod || 'Cash on Delivery',
+      createdAt: order.createdAt
+    };
+
+    res.json({ order: updatedSellerOrder });
+  } catch (error) { next(error); }
+});
+function enrichMarketplaceProduct(prod, store, inv) {
+  const defaultEmoji = categoryEmojiMap[prod.category] || '🛍️';
+  return {
+    id: prod.id,
+    name: prod.name,
+    brand: prod.brand || store.name,
+    category: prod.category,
+    price: Number(prod.price),
+    was: prod.was !== undefined && prod.was !== null ? Number(prod.was) : undefined,
+    description: prod.description || '',
+    emoji: prod.emoji || defaultEmoji,
+    gradient: prod.gradient || 'rose',
+    image: prod.image || undefined,
+    badge: prod.badge || undefined,
+    badgeType: prod.badgeType || undefined,
+    rating: Number(prod.rating || 4.5),
+    reviews: Number(prod.reviews || 0),
+    keywords: Array.isArray(prod.keywords) ? prod.keywords : [prod.category.toLowerCase(), prod.name.toLowerCase()],
+    sellerId: prod.sellerId,
+    storeId: prod.storeId,
+    storeName: store.name,
+    storeCity: store.city,
+    storeDistrict: store.district || '',
+    isSellerProduct: true,
+    inStock: inv ? inv.availableQuantity > 0 : true,
+    availableQuantity: inv ? inv.availableQuantity : 999
+  };
+}
+
+function getEligibleSellerProducts(data) {
+  const approvedSellers = new Map(
+    (data.sellers || [])
+      .filter((s) => s.status === 'approved')
+      .map((s) => [s.id, s])
+  );
+  const activeStores = new Map(
+    (data.stores || [])
+      .filter((st) => approvedSellers.has(st.sellerId) && st.status !== 'inactive' && st.status !== 'suspended' && st.status !== 'rejected')
+      .map((st) => [st.id, st])
+  );
+  const inventoryMap = new Map();
+  for (const inv of data.inventory || []) {
+    const qty = Number(inv.quantity) || 0;
+    const reserved = Number(inv.reservedQuantity) || 0;
+    const avail = Math.max(0, qty - reserved);
+    inventoryMap.set(inv.productId, {
+      id: inv.id,
+      quantity: qty,
+      reservedQuantity: reserved,
+      availableQuantity: avail
+    });
+  }
+
+  const eligibleProducts = [];
+  for (const prod of data.products || []) {
+    if (prod.status !== 'active') continue;
+    if (!prod.sellerId || !approvedSellers.has(prod.sellerId)) continue;
+    if (!prod.storeId || !activeStores.has(prod.storeId)) continue;
+
+    const store = activeStores.get(prod.storeId);
+    if (store.sellerId !== prod.sellerId) continue;
+
+    const inv = inventoryMap.get(prod.id);
+    if (!inv || inv.availableQuantity <= 0) continue;
+
+    eligibleProducts.push(enrichMarketplaceProduct(prod, store, inv));
+  }
+  return eligibleProducts;
+}
+
 app.get('/api/products/:id', async (req, res, next) => {
   try {
     const data = await readStoredData();
-    const storedProduct = data.products.find((item) => item.id === req.params.id);
-    if (storedProduct) {
-      return res.json({ product: storedProduct });
-    }
     const catalogProduct = catalog.find((item) => item.id === req.params.id);
     if (catalogProduct) {
       return res.json({ product: catalogProduct });
     }
+
+    const storedProduct = data.products.find((item) => item.id === req.params.id);
+    if (storedProduct) {
+      const seller = data.sellers.find((s) => s.id === storedProduct.sellerId);
+      const store = data.stores.find((st) => st.id === storedProduct.storeId);
+      const invRecord = data.inventory.find((inv) => inv.productId === storedProduct.id);
+
+      const qty = Number(invRecord?.quantity) || 0;
+      const reserved = Number(invRecord?.reservedQuantity) || 0;
+      const avail = Math.max(0, qty - reserved);
+      const inv = { quantity: qty, reservedQuantity: reserved, availableQuantity: avail };
+
+      const isEligible =
+        storedProduct.status === 'active' &&
+        seller && seller.status === 'approved' &&
+        store && store.sellerId === seller.id && store.status !== 'inactive' && store.status !== 'suspended' && store.status !== 'rejected' &&
+        avail > 0;
+
+      if (isEligible) {
+        return res.json({ product: enrichMarketplaceProduct(storedProduct, store, inv) });
+      }
+      return res.status(404).json({ message: 'Product not found or currently unavailable.' });
+    }
+
     res.status(404).json({ message: 'Product not found.' });
   } catch (error) { next(error); }
 });
@@ -761,10 +1056,15 @@ app.patch('/api/products/:id', async (req, res, next) => {
 });
 app.get('/api/products', async (req, res, next) => {
   try {
+    const data = await readStoredData();
     const query = normalize(req.query.q);
     const category = normalize(req.query.category);
-    const products = catalog.filter((item) => {
-      const searchable = normalize(`${item.name} ${item.brand} ${item.category} ${(item.keywords || []).join(' ')}`);
+
+    const eligibleSellerProducts = getEligibleSellerProducts(data);
+    const combinedCatalog = [...catalog, ...eligibleSellerProducts];
+
+    const products = combinedCatalog.filter((item) => {
+      const searchable = normalize(`${item.name} ${item.brand || ''} ${item.category} ${item.storeName || ''} ${(item.keywords || []).join(' ')}`);
       const searchableWords = searchable.split(' ');
       const queryMatches = !query || query.split(' ').every((term) => searchableWords.some((word) => word.startsWith(term)));
       return queryMatches && matchesCategory(item, category);
@@ -774,19 +1074,155 @@ app.get('/api/products', async (req, res, next) => {
 });
 app.post('/api/orders', async (req, res, next) => {
   try {
-    const { customer, items, paymentMethod, promoCode } = req.body;
+    const { customer, items, paymentMethod, promoCode } = req.body || {};
     if (!customer?.name || !customer?.email || !customer?.phone || !customer?.address || !customer?.city || !customer?.postalCode || !Array.isArray(items) || items.length === 0 || !paymentMethod) {
       return res.status(400).json({ message: 'Please complete all customer, delivery, and payment fields.' });
     }
     if (!/^\S+@\S+\.\S+$/.test(customer.email)) return res.status(400).json({ message: 'Please provide a valid email.' });
     if (!/^[0-9+()\-\s]{7,20}$/.test(customer.phone)) return res.status(400).json({ message: 'Please provide a valid phone number.' });
     if (!/^\d{4,10}$/.test(String(customer.postalCode))) return res.status(400).json({ message: 'Please provide a valid postal code.' });
-    const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+
+    const data = await readStoredData();
+    const verifiedItems = [];
+    const inventoryUpdates = [];
+
+    for (const rawItem of items) {
+      const pid = rawItem.productId || rawItem.id;
+      if (!pid) {
+        return res.status(400).json({ message: 'Each item must have a valid product identifier.' });
+      }
+
+      const qty = Number(rawItem.quantity);
+      if (!Number.isInteger(qty) || qty <= 0 || qty > 1000) {
+        return res.status(400).json({ message: 'Item quantity must be a positive integer.' });
+      }
+
+      // 1. Check if it's a stored seller product
+      const storedProduct = data.products.find((p) => p.id === pid);
+      if (storedProduct) {
+        if (storedProduct.status !== 'active') {
+          return res.status(400).json({ message: `Product "${storedProduct.name}" is not active for purchase.` });
+        }
+
+        const seller = data.sellers.find((s) => s.id === storedProduct.sellerId);
+        if (!seller || seller.status !== 'approved') {
+          return res.status(400).json({ message: `Seller for product "${storedProduct.name}" is not approved.` });
+        }
+
+        const store = data.stores.find((st) => st.id === storedProduct.storeId);
+        if (!store || store.sellerId !== seller.id || store.status === 'inactive' || store.status === 'suspended' || store.status === 'rejected') {
+          return res.status(400).json({ message: `Store for product "${storedProduct.name}" is currently unavailable.` });
+        }
+
+        const invIndex = data.inventory.findIndex((inv) => inv.productId === storedProduct.id);
+        const invRecord = invIndex !== -1 ? data.inventory[invIndex] : null;
+        const currentQty = Number(invRecord?.quantity) || 0;
+        const currentReserved = Number(invRecord?.reservedQuantity) || 0;
+        const availableQty = currentQty - currentReserved;
+
+        if (availableQty < qty) {
+          return res.status(400).json({ message: `Product "${storedProduct.name}" is out of stock or does not have sufficient quantity available (Available: ${Math.max(0, availableQty)}).` });
+        }
+
+        verifiedItems.push({
+          id: storedProduct.id,
+          productId: storedProduct.id,
+          name: storedProduct.name,
+          price: Number(storedProduct.price),
+          quantity: qty,
+          sellerId: storedProduct.sellerId,
+          storeId: storedProduct.storeId,
+          status: 'confirmed'
+        });
+
+        const newReserved = currentReserved + qty;
+        const newAvailable = Math.max(0, currentQty - newReserved);
+        const updatedInv = {
+          id: invRecord?.id || `inv-${randomUUID().slice(0, 8)}`,
+          productId: storedProduct.id,
+          sellerId: storedProduct.sellerId,
+          storeId: storedProduct.storeId,
+          quantity: currentQty,
+          reservedQuantity: newReserved,
+          availableQuantity: newAvailable,
+          updatedAt: new Date().toISOString()
+        };
+        inventoryUpdates.push({ index: invIndex, record: updatedInv });
+        continue;
+      }
+
+      // 2. Check if it's a legacy MVP catalog product
+      const catalogProduct = catalog.find((p) => p.id === pid);
+      if (catalogProduct) {
+        verifiedItems.push({
+          id: catalogProduct.id,
+          productId: catalogProduct.id,
+          name: catalogProduct.name,
+          price: Number(catalogProduct.price),
+          quantity: qty,
+          status: 'confirmed'
+        });
+        continue;
+      }
+
+      // 3. Dynamic landing page items (e.g. reels / arrivals)
+      const name = String(rawItem.name || '').trim();
+      const clientPrice = Number(rawItem.price);
+      if (name && !isNaN(clientPrice) && clientPrice > 0) {
+        verifiedItems.push({
+          id: String(pid),
+          productId: String(pid),
+          name: name.slice(0, 120),
+          price: Math.round(clientPrice),
+          quantity: qty,
+          status: 'confirmed'
+        });
+        continue;
+      }
+
+      return res.status(400).json({ message: `Product "${pid}" could not be found in the catalog.` });
+    }
+
+    // Apply inventory updates
+    for (const { index, record } of inventoryUpdates) {
+      if (index !== -1) {
+        data.inventory[index] = record;
+      } else {
+        data.inventory.push(record);
+      }
+    }
+
+    const subtotal = verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const delivery = subtotal >= 1500 ? 0 : 100;
     const discount = String(promoCode || '').trim().toUpperCase() === 'VASTAAR20' ? Math.round(subtotal * 0.2) : 0;
     const total = subtotal + delivery - discount;
-    const data = await readStoredData();
-    const order = { id: `VST-${Date.now().toString(36).toUpperCase()}`, customer, items, paymentMethod, promoCode: promoCode || '', summary: { subtotal, delivery, discount, total }, createdAt: new Date().toISOString(), status: 'confirmed' };
+
+    const sellerStatuses = {};
+    for (const item of verifiedItems) {
+      if (item.sellerId) {
+        sellerStatuses[item.sellerId] = 'confirmed';
+      }
+    }
+
+    const order = {
+      id: `VST-${Date.now().toString(36).toUpperCase()}`,
+      customer: {
+        name: String(customer.name).trim(),
+        email: String(customer.email).trim().toLowerCase(),
+        phone: String(customer.phone).trim(),
+        address: String(customer.address).trim(),
+        city: String(customer.city).trim(),
+        postalCode: String(customer.postalCode).trim()
+      },
+      items: verifiedItems,
+      paymentMethod: String(paymentMethod).trim(),
+      promoCode: String(promoCode || '').trim(),
+      summary: { subtotal, delivery, discount, total },
+      createdAt: new Date().toISOString(),
+      status: 'confirmed',
+      ...(Object.keys(sellerStatuses).length > 0 ? { sellerStatuses } : {})
+    };
+
     data.orders = [...(data.orders || []), order];
     await writeData(data);
     res.status(201).json({ order });

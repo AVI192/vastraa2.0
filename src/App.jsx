@@ -623,10 +623,11 @@ function BannerStrip({ onSelect }) {
   );
 }
 function ProductCard({ product, wished, onWish, onAdd }) {
-  const discount = Math.round((1 - product.price / product.was) * 100);
+  const hasDiscount = product.was && Number(product.was) > Number(product.price);
+  const discount = hasDiscount ? Math.round((1 - product.price / product.was) * 100) : 0;
   return (
     <article className="prod-card">
-      <div className={`prod-img gradient-${product.gradient}`}>
+      <div className={`prod-img gradient-${product.gradient || "rose"}`}>
         {product.image ? (
           <img
             src={product.image}
@@ -641,9 +642,11 @@ function ProductCard({ product, wished, onWish, onAdd }) {
             <span className="product-fallback is-visible">{product.emoji}</span>
         )}
         {product.image && <span className="product-fallback">{product.emoji}</span>}
-        <span className={`prod-badge badge-${product.badgeType}`}>
-          {product.badge}
-        </span>
+        {product.badge ? (
+          <span className={`prod-badge badge-${product.badgeType || "new"}`}>
+            {product.badge}
+          </span>
+        ) : null}
         <button
           className={`prod-wish ${wished ? "active" : ""}`}
           onClick={onWish}
@@ -656,12 +659,25 @@ function ProductCard({ product, wished, onWish, onAdd }) {
         </button>
       </div>
       <div className="prod-info">
-        <div className="prod-brand">{product.brand}</div>
+        <div className="prod-brand">
+          {product.storeName ? (
+            <span className="prod-seller-tag">
+              <i className="fa fa-store" /> {product.storeName}
+              {product.storeCity ? ` • ${product.storeCity}` : ""}
+            </span>
+          ) : (
+            product.brand
+          )}
+        </div>
         <div className="prod-name">{product.name}</div>
         <div className="prod-price">
           <span className="price-now">{money(product.price)}</span>
-          <span className="price-was">{money(product.was)}</span>
-          <span className="price-off">{discount}% off</span>
+          {hasDiscount ? (
+            <>
+              <span className="price-was">{money(product.was)}</span>
+              <span className="price-off">{discount}% off</span>
+            </>
+          ) : null}
         </div>
         <div className="prod-stars">
           <span className="star-badge">
@@ -1157,6 +1173,15 @@ function SellerDashboard({ onClose }) {
                     setDashboard((current) => current ? { ...current, stats: { ...current.stats, inventory: count } } : current);
                   }}
                 />
+              ) : view === "orders" ? (
+                <SellerOrders
+                  sellerId={dashboard.seller.id}
+                  store={dashboard.store}
+                  onBack={() => setView("dashboard")}
+                  onOrderCountChange={(count) => {
+                    setDashboard((current) => current ? { ...current, stats: { ...current.stats, orders: count } } : current);
+                  }}
+                />
               ) : (
                 <>
                   <div className="dashboard-welcome"><span>Welcome, {dashboard.seller.name}</span><small>{dashboard.store?.name || "Store not created"}</small></div>
@@ -1164,7 +1189,7 @@ function SellerDashboard({ onClose }) {
                     <DashboardCard icon="fa-shield-halved" label="Verification" value={statusLabel} tone={status} detail={status === "rejected" ? dashboard.seller.verification?.rejectionReason : status === "pending" ? "Your application is under review." : "Seller verification complete."} />
                     <DashboardCard icon="fa-box" label="Products" value={dashboard.stats.products} detail={`${dashboard.stats.products} listed in store`} />
                     <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory !== undefined ? dashboard.stats.inventory : 0} detail={`${dashboard.stats.inventory !== undefined ? dashboard.stats.inventory : 0} tracked items`} />
-                    <DashboardCard icon="fa-receipt" label="Orders" value={dashboard.stats.orders} detail="Seller orders arrive in a later phase." />
+                    <DashboardCard icon="fa-receipt" label="Orders" value={dashboard.stats.orders !== undefined ? dashboard.stats.orders : 0} detail={`${dashboard.stats.orders !== undefined ? dashboard.stats.orders : 0} seller orders`} />
                     <DashboardCard icon="fa-store" label="Store status" value={dashboard.store?.status || "Not available"} detail={dashboard.store?.city || "Store profile"} />
                     <DashboardCard icon="fa-id-card" label="Seller ID" value={dashboard.seller.id} detail={`Registered ${new Date(dashboard.seller.createdAt).toLocaleDateString("en-NP")}`} />
                   </div>
@@ -1209,7 +1234,14 @@ function SellerDashboard({ onClose }) {
                       >
                         Manage Inventory <small>{dashboard.store ? "Track & update stock" : "Store not created"}</small>
                       </button>
-                      <button disabled>View Orders <small>Phase 2.8</small></button>
+                      <button
+                        type="button"
+                        className="dashboard-action-active"
+                        onClick={() => setView("orders")}
+                        disabled={!dashboard.store}
+                      >
+                        Manage Orders <small>{dashboard.store ? "View & manage orders" : "Store not created"}</small>
+                      </button>
                     </div>
                   </div>
                 </>
@@ -2358,6 +2390,342 @@ function SellerInventory({ sellerId, store, onBack, onInventoryCountChange }) {
   );
 }
 
+function SellerOrders({ sellerId, store, onBack, onOrderCountChange }) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState({});
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const loadOrders = useCallback(async () => {
+    if (!sellerId) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`${API}/sellers/${encodeURIComponent(sellerId)}/orders`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to load orders.");
+      const items = Array.isArray(data.orders) ? data.orders : [];
+      setOrders(items);
+      if (onOrderCountChange) onOrderCountChange(items.length);
+    } catch (err) {
+      setError(err.message || "Unable to load orders.");
+    } finally {
+      setLoading(false);
+    }
+  }, [sellerId, onOrderCountChange]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const handleUpdateStatus = async (orderId) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+
+    const newStatus = selectedStatus[orderId] || order.status;
+    if (!newStatus) {
+      setError("Please select a status.");
+      return;
+    }
+
+    setUpdatingOrderId(orderId);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch(
+        `${API}/sellers/${encodeURIComponent(sellerId)}/orders/${encodeURIComponent(orderId)}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus })
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to update order status.");
+      }
+
+      setOrders((current) =>
+        current.map((item) => (item.id === orderId ? data.order : item))
+      );
+      setSuccess("Order status updated successfully.");
+      setTimeout(() => setSuccess(""), 4000);
+      setSelectedStatus((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
+    } catch (err) {
+      setError(err.message || "Unable to update order status.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const getStatusBadge = (statusStr) => {
+    const s = String(statusStr || "confirmed").toLowerCase();
+    const toneMap = {
+      placed: "status-placed",
+      confirmed: "status-confirmed",
+      processing: "status-processing",
+      shipped: "status-shipped",
+      delivered: "status-delivered",
+      cancelled: "status-cancelled"
+    };
+    return {
+      label: s.toUpperCase(),
+      tone: toneMap[s] || "status-confirmed"
+    };
+  };
+
+  const filteredOrders = orders.filter((order) => {
+    if (filterStatus !== "all" && String(order.status).toLowerCase() !== filterStatus.toLowerCase()) {
+      return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchId = (order.id || "").toLowerCase().includes(q) || (order.orderId || "").toLowerCase().includes(q);
+      const matchName = (order.customer?.name || "").toLowerCase().includes(q);
+      const matchPhone = (order.customer?.phone || "").toLowerCase().includes(q);
+      const matchCity = (order.customer?.city || "").toLowerCase().includes(q);
+      const matchItems = Array.isArray(order.items) && order.items.some((it) => (it.name || "").toLowerCase().includes(q));
+      if (!matchId && !matchName && !matchPhone && !matchCity && !matchItems) return false;
+    }
+    return true;
+  });
+
+  return (
+    <div className="seller-products-view">
+      <div className="seller-products-header">
+        <div className="seller-products-title-wrap">
+          <button className="store-profile-back" onClick={onBack}>
+            <i className="fa fa-arrow-left" /> Back to Dashboard
+          </button>
+          <div>
+            <h3>Order Management</h3>
+            <p className="seller-products-subtitle">Track, fulfill, and update customer orders</p>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="store-profile-error" role="alert">
+          <i className="fa fa-circle-exclamation" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {success && (
+        <div className="store-profile-success" role="status">
+          <i className="fa fa-circle-check" />
+          <span>{success}</span>
+        </div>
+      )}
+
+      {/* Filter / Search Bar */}
+      <div className="seller-filter-bar">
+        <div className="seller-search-box">
+          <i className="fa fa-search" />
+          <input
+            type="text"
+            placeholder="Search by Order ID, customer, phone, or item..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              className="seller-search-clear"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
+            >
+              <i className="fa fa-xmark" />
+            </button>
+          )}
+        </div>
+
+        <div className="seller-filter-selects">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            aria-label="Filter by order status"
+          >
+            <option value="all">All Statuses ({orders.length})</option>
+            <option value="placed">Placed</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="seller-products-state">
+          <i className="fa fa-spinner fa-spin" />
+          <strong>Loading orders...</strong>
+        </div>
+      ) : !orders.length ? (
+        <div className="seller-products-state">
+          <i className="fa fa-receipt" />
+          <strong>No orders found</strong>
+          <span>Orders containing your products will appear here.</span>
+        </div>
+      ) : !filteredOrders.length ? (
+        <div className="seller-products-state">
+          <i className="fa fa-filter" />
+          <strong>No matching orders</strong>
+          <span>Try adjusting your search query or status filter.</span>
+        </div>
+      ) : (
+        <div className="seller-orders-list">
+          {filteredOrders.map((order) => {
+            const badge = getStatusBadge(order.status);
+            const currentSelected = selectedStatus[order.id] || order.status;
+            const isUpdating = updatingOrderId === order.id;
+
+            return (
+              <div className="seller-order-card" key={order.id}>
+                <div className="seller-order-card-header">
+                  <div className="seller-order-header-info">
+                    <h4 className="seller-order-id">
+                      Order #{order.id}
+                    </h4>
+                    <span className="seller-order-date">
+                      <i className="fa fa-clock" />{" "}
+                      {new Date(order.createdAt).toLocaleDateString("en-NP", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </span>
+                  </div>
+                  <span className={`order-status-badge ${badge.tone}`}>
+                    {badge.label}
+                  </span>
+                </div>
+
+                <div className="seller-order-details-grid">
+                  <div className="seller-order-customer-box">
+                    <h5><i className="fa fa-user" /> Customer & Delivery</h5>
+                    <div className="seller-order-customer-data">
+                      <strong>{order.customer?.name || "Customer"}</strong>
+                      {order.customer?.phone && (
+                        <span><i className="fa fa-phone" /> {order.customer.phone}</span>
+                      )}
+                      {order.customer?.email && (
+                        <span><i className="fa fa-envelope" /> {order.customer.email}</span>
+                      )}
+                      {order.customer?.address && (
+                        <span className="seller-order-address">
+                          <i className="fa fa-location-dot" /> {order.customer.address}, {order.customer.city || ""} {order.customer.postalCode || ""}
+                        </span>
+                      )}
+                      <span className="seller-order-payment">
+                        <i className="fa fa-credit-card" /> {order.paymentMethod || "Cash on Delivery"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="seller-order-items-box">
+                    <h5><i className="fa fa-box-open" /> Your Order Items</h5>
+                    <div className="seller-order-items-table-wrap">
+                      <table className="seller-order-items-table">
+                        <thead>
+                          <tr>
+                            <th>Item</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th style={{ textAlign: "right" }}>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(order.items || []).map((item, idx) => (
+                            <tr key={item.productId ? `${item.productId}-${idx}` : idx}>
+                              <td>
+                                <strong>{item.name}</strong>
+                              </td>
+                              <td>{money(item.price)}</td>
+                              <td>x{item.quantity}</td>
+                              <td style={{ textAlign: "right", fontWeight: 600 }}>
+                                {money(item.price * item.quantity)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="seller-order-card-footer">
+                  <div className="seller-order-subtotal">
+                    <span>Seller Subtotal:</span>
+                    <strong>{money(order.subtotal)}</strong>
+                  </div>
+
+                  <div className="seller-order-status-actions">
+                    <label htmlFor={`status-select-${order.id}`} className="seller-order-status-label">
+                      Update Status:
+                    </label>
+                    <select
+                      id={`status-select-${order.id}`}
+                      className="seller-order-status-select"
+                      value={currentSelected.toLowerCase()}
+                      onChange={(e) =>
+                        setSelectedStatus((prev) => ({
+                          ...prev,
+                          [order.id]: e.target.value
+                        }))
+                      }
+                      disabled={isUpdating || order.status === "delivered" || order.status === "cancelled"}
+                    >
+                      <option value="placed">PLACED</option>
+                      <option value="confirmed">CONFIRMED</option>
+                      <option value="processing">PROCESSING</option>
+                      <option value="shipped">SHIPPED</option>
+                      <option value="delivered">DELIVERED</option>
+                      <option value="cancelled">CANCELLED</option>
+                    </select>
+                    <button
+                      type="button"
+                      className="order-update-btn"
+                      onClick={() => handleUpdateStatus(order.id)}
+                      disabled={
+                        isUpdating ||
+                        currentSelected.toLowerCase() === (order.status || "").toLowerCase() ||
+                        order.status === "delivered" ||
+                        order.status === "cancelled"
+                      }
+                    >
+                      {isUpdating ? (
+                        <>
+                          <i className="fa fa-spinner fa-spin" /> Updating...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa fa-check" /> Update Status
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CartDrawer({ cart, subtotal, onClose, onChange, onCheckout }) {
   return (
     <div className="drawer-backdrop" onClick={onClose}>
@@ -2383,6 +2751,11 @@ function CartDrawer({ cart, subtotal, onClose, onChange, onCheckout }) {
                   )}
                   <div className="cart-item-info">
                     <strong>{item.name}</strong>
+                    {item.storeName ? (
+                      <span className="cart-store-tag">
+                        <i className="fa fa-store" /> {item.storeName}
+                      </span>
+                    ) : null}
                     <small>{money(item.price)} each</small>
                     <div className="quantity">
                       <button
@@ -2464,11 +2837,14 @@ function Checkout({ cart, subtotal, onClose, onSuccess }) {
           },
           paymentMethod: form.paymentMethod,
           promoCode: form.promoCode,
-          items: cart.map(({ id, name, price, quantity }) => ({
+          items: cart.map(({ id, name, price, quantity, sellerId, storeId }) => ({
             id,
+            productId: id,
             name,
             price,
             quantity,
+            sellerId,
+            storeId
           })),
         }),
       });
