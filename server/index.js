@@ -32,6 +32,150 @@ const categoryAliases = {
   accessories: ['accessory', 'accessories']
 };
 
+const categoryEmojiMap = {
+  'Ethnic Wear': '👗',
+  'Western': '👕',
+  'Kids': '👶',
+  'Footwear': '👟',
+  'Jewellery': '💎',
+  'Bags': '👜',
+  'Beauty': '🧴',
+  'Men': '👔',
+  'Women': '🥻',
+  'Accessories': '🧣',
+  'Home & Living': '🧺'
+};
+
+function validateProductInput(body, isUpdate = false, existingProduct = null) {
+  const errors = [];
+  const updates = {};
+
+  if (!isUpdate || body.name !== undefined) {
+    const name = String(body.name || '').trim();
+    if (!name || name.length < 2 || name.length > 120) {
+      errors.push('Product name must be between 2 and 120 characters.');
+    } else {
+      updates.name = name;
+    }
+  }
+
+  if (!isUpdate || body.price !== undefined) {
+    const price = Number(body.price);
+    if (isNaN(price) || price <= 0 || price > 1000000) {
+      errors.push('Please provide a valid price between Rs. 1 and Rs. 1,000,000.');
+    } else {
+      updates.price = Math.round(price);
+    }
+  }
+
+  const effectivePrice = updates.price !== undefined ? updates.price : (existingProduct ? existingProduct.price : undefined);
+
+  if (body.was !== undefined && body.was !== null && body.was !== '') {
+    const was = Number(body.was);
+    if (isNaN(was) || (effectivePrice !== undefined && was < effectivePrice)) {
+      errors.push('Original price (was) must be greater than or equal to current price.');
+    } else {
+      updates.was = Math.round(was);
+    }
+  } else if (isUpdate && (body.was === null || body.was === '')) {
+    updates.was = null;
+  } else if (isUpdate && updates.price !== undefined && existingProduct?.was !== undefined && existingProduct?.was !== null) {
+    if (existingProduct.was < updates.price) {
+      errors.push('Current price cannot exceed existing original price. Please update or clear original price.');
+    }
+  }
+
+  if (!isUpdate || body.category !== undefined) {
+    const category = String(body.category || '').trim();
+    if (!category || category.length < 2 || category.length > 50) {
+      errors.push('Please select or provide a valid product category.');
+    } else {
+      updates.category = category;
+    }
+  }
+
+  if (body.brand !== undefined) {
+    const brand = String(body.brand || '').trim();
+    if (brand && (brand.length < 2 || brand.length > 60)) {
+      errors.push('Brand name must be between 2 and 60 characters.');
+    } else if (brand) {
+      updates.brand = brand;
+    } else if (isUpdate && brand === '') {
+      updates.brand = null;
+    }
+  }
+
+  if (body.description !== undefined) {
+    const description = String(body.description || '').trim();
+    if (description.length > 1000) {
+      errors.push('Description cannot exceed 1000 characters.');
+    } else {
+      updates.description = description;
+    }
+  }
+
+  if (body.status !== undefined) {
+    const status = String(body.status || '').trim().toLowerCase();
+    if (!['active', 'inactive'].includes(status)) {
+      errors.push('Status must be either "active" or "inactive".');
+    } else {
+      updates.status = status;
+    }
+  }
+
+  if (body.image !== undefined) {
+    const image = String(body.image || '').trim();
+    updates.image = image || null;
+  }
+
+  if (body.emoji !== undefined) {
+    const emoji = String(body.emoji || '').trim();
+    if (emoji) updates.emoji = emoji;
+  }
+
+  if (body.gradient !== undefined) {
+    const validGradients = ['rose', 'sky', 'lilac', 'sun', 'mint', 'pink', 'aqua', 'indigo'];
+    const gradient = String(body.gradient || '').trim().toLowerCase();
+    if (gradient && !validGradients.includes(gradient)) {
+      errors.push('Gradient must be one of: rose, sky, lilac, sun, mint, pink, aqua, indigo.');
+    } else if (gradient) {
+      updates.gradient = gradient;
+    }
+  }
+
+  if (body.badge !== undefined) {
+    const badge = String(body.badge || '').trim();
+    if (badge.length > 30) {
+      errors.push('Badge text cannot exceed 30 characters.');
+    } else if (badge) {
+      updates.badge = badge;
+    } else if (isUpdate && badge === '') {
+      updates.badge = null;
+      updates.badgeType = null;
+    }
+  }
+
+  if (body.badgeType !== undefined) {
+    const validBadgeTypes = ['new', 'sale', 'hot', 'best'];
+    const badgeType = String(body.badgeType || '').trim().toLowerCase();
+    if (badgeType && !validBadgeTypes.includes(badgeType)) {
+      errors.push('Badge type must be one of: new, sale, hot, best.');
+    } else if (badgeType) {
+      updates.badgeType = badgeType;
+    }
+  }
+
+  if (body.keywords !== undefined) {
+    if (Array.isArray(body.keywords)) {
+      updates.keywords = body.keywords.map((k) => String(k).trim()).filter(Boolean);
+    } else if (typeof body.keywords === 'string') {
+      updates.keywords = body.keywords.split(',').map((k) => k.trim()).filter(Boolean);
+    }
+  }
+
+  return { errors, updates };
+}
+
 function normalize(value) {
   return String(value || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
@@ -298,6 +442,53 @@ app.get('/api/sellers/:id/products', async (req, res, next) => {
     res.json({ products: data.products.filter((item) => item.sellerId === req.params.id) });
   } catch (error) { next(error); }
 });
+app.post('/api/sellers/:id/products', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const seller = data.sellers.find((item) => item.id === req.params.id);
+    if (!seller) return res.status(404).json({ message: 'Seller not found.' });
+    const store = data.stores.find((item) => item.sellerId === seller.id);
+    if (!store) return res.status(404).json({ message: 'Store not found for this seller.' });
+
+    const { errors, updates } = validateProductInput(req.body, false);
+    if (errors.length > 0) {
+      return res.status(400).json({ message: errors[0], errors });
+    }
+
+    const defaultEmoji = categoryEmojiMap[updates.category] || '🛍️';
+    const product = {
+      id: `prod-${randomUUID().slice(0, 8)}`,
+      sellerId: seller.id,
+      storeId: store.id,
+      name: updates.name,
+      brand: updates.brand || store.name,
+      category: updates.category,
+      price: updates.price,
+      description: updates.description || '',
+      emoji: updates.emoji || defaultEmoji,
+      gradient: updates.gradient || 'rose',
+      keywords: updates.keywords || [updates.category.toLowerCase(), updates.name.toLowerCase()],
+      status: updates.status || 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (updates.was !== undefined && updates.was !== null) {
+      product.was = updates.was;
+    }
+    if (updates.badge) {
+      product.badge = updates.badge;
+      product.badgeType = updates.badgeType || 'new';
+    }
+    if (updates.image) {
+      product.image = updates.image;
+    }
+
+    data.products = [...(data.products || []), product];
+    await writeData(data);
+    res.status(201).json({ product });
+  } catch (error) { next(error); }
+});
 app.get('/api/stores/:id/products', async (req, res, next) => {
   try {
     const data = await readStoredData();
@@ -307,12 +498,115 @@ app.get('/api/stores/:id/products', async (req, res, next) => {
     res.json({ products: data.products.filter((item) => item.storeId === req.params.id) });
   } catch (error) { next(error); }
 });
+app.post('/api/stores/:id/products', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const store = data.stores.find((item) => item.id === req.params.id);
+    if (!store) return res.status(404).json({ message: 'Store not found.' });
+    const seller = data.sellers.find((item) => item.id === store.sellerId);
+    if (!seller) return res.status(404).json({ message: 'Seller not found for this store.' });
+
+    const { errors, updates } = validateProductInput(req.body, false);
+    if (errors.length > 0) {
+      return res.status(400).json({ message: errors[0], errors });
+    }
+
+    const defaultEmoji = categoryEmojiMap[updates.category] || '🛍️';
+    const product = {
+      id: `prod-${randomUUID().slice(0, 8)}`,
+      sellerId: store.sellerId,
+      storeId: store.id,
+      name: updates.name,
+      brand: updates.brand || store.name,
+      category: updates.category,
+      price: updates.price,
+      description: updates.description || '',
+      emoji: updates.emoji || defaultEmoji,
+      gradient: updates.gradient || 'rose',
+      keywords: updates.keywords || [updates.category.toLowerCase(), updates.name.toLowerCase()],
+      status: updates.status || 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (updates.was !== undefined && updates.was !== null) {
+      product.was = updates.was;
+    }
+    if (updates.badge) {
+      product.badge = updates.badge;
+      product.badgeType = updates.badgeType || 'new';
+    }
+    if (updates.image) {
+      product.image = updates.image;
+    }
+
+    data.products = [...(data.products || []), product];
+    await writeData(data);
+    res.status(201).json({ product });
+  } catch (error) { next(error); }
+});
+app.get('/api/products/:id', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const storedProduct = data.products.find((item) => item.id === req.params.id);
+    if (storedProduct) {
+      return res.json({ product: storedProduct });
+    }
+    const catalogProduct = catalog.find((item) => item.id === req.params.id);
+    if (catalogProduct) {
+      return res.json({ product: catalogProduct });
+    }
+    res.status(404).json({ message: 'Product not found.' });
+  } catch (error) { next(error); }
+});
+app.patch('/api/products/:id', async (req, res, next) => {
+  try {
+    const data = await readStoredData();
+    const productIndex = data.products.findIndex((item) => item.id === req.params.id);
+    if (productIndex === -1) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    const existingProduct = data.products[productIndex];
+    const { errors, updates } = validateProductInput(req.body, true, existingProduct);
+    if (errors.length > 0) {
+      return res.status(400).json({ message: errors[0], errors });
+    }
+
+    const updatedProduct = {
+      ...existingProduct,
+      ...updates,
+      id: existingProduct.id,
+      sellerId: existingProduct.sellerId,
+      storeId: existingProduct.storeId,
+      createdAt: existingProduct.createdAt,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (updates.was === null) {
+      delete updatedProduct.was;
+    }
+    if (updates.badge === null) {
+      delete updatedProduct.badge;
+      delete updatedProduct.badgeType;
+    }
+    if (updates.brand === null) {
+      delete updatedProduct.brand;
+    }
+    if (updates.image === null) {
+      delete updatedProduct.image;
+    }
+
+    data.products[productIndex] = updatedProduct;
+    await writeData(data);
+    res.json({ product: updatedProduct });
+  } catch (error) { next(error); }
+});
 app.get('/api/products', async (req, res, next) => {
   try {
-    const data = await readData();
     const query = normalize(req.query.q);
     const category = normalize(req.query.category);
-    const products = data.products.filter((item) => {
+    const products = catalog.filter((item) => {
       const searchable = normalize(`${item.name} ${item.brand} ${item.category} ${(item.keywords || []).join(' ')}`);
       const searchableWords = searchable.split(' ');
       const queryMatches = !query || query.split(' ').every((term) => searchableWords.some((word) => word.startsWith(term)));

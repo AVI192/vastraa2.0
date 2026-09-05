@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const API = import.meta.env.VITE_API_URL || "/api";
 const categories = [
@@ -1076,6 +1076,7 @@ function SellerDashboard({ onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [view, setView] = useState("dashboard");
+  const [openAddProduct, setOpenAddProduct] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/sellers`)
@@ -1094,6 +1095,7 @@ function SellerDashboard({ onClose }) {
 
   useEffect(() => {
     setView("dashboard");
+    setOpenAddProduct(false);
     if (!sellerId) {
       setDashboard(null);
       return undefined;
@@ -1135,15 +1137,26 @@ function SellerDashboard({ onClose }) {
                     setDashboard((current) => current ? { ...current, store: updatedStore } : current);
                   }}
                 />
+              ) : view === "products" ? (
+                <SellerProducts
+                  sellerId={dashboard.seller.id}
+                  store={dashboard.store}
+                  onBack={() => setView("dashboard")}
+                  onProductCountChange={(count) => {
+                    setDashboard((current) => current ? { ...current, stats: { ...current.stats, products: count } } : current);
+                  }}
+                  openAddDirectly={openAddProduct}
+                  onCloseAddDirectly={() => setOpenAddProduct(false)}
+                />
               ) : (
                 <>
                   <div className="dashboard-welcome"><span>Welcome, {dashboard.seller.name}</span><small>{dashboard.store?.name || "Store not created"}</small></div>
                   <div className="dashboard-grid">
                     <DashboardCard icon="fa-shield-halved" label="Verification" value={statusLabel} tone={status} detail={status === "rejected" ? dashboard.seller.verification?.rejectionReason : status === "pending" ? "Your application is under review." : "Seller verification complete."} />
-                    <DashboardCard icon="fa-box" label="Products" value={dashboard.stats.products} detail="Available in later phase" />
-                    <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory || "Coming soon"} detail="Inventory management is not active yet." />
+                    <DashboardCard icon="fa-box" label="Products" value={dashboard.stats.products} detail={`${dashboard.stats.products} listed in store`} />
+                    <DashboardCard icon="fa-layer-group" label="Inventory" value={dashboard.stats.inventory || "Coming soon"} detail="Inventory management arrives in Phase 2.7." />
                     <DashboardCard icon="fa-receipt" label="Orders" value={dashboard.stats.orders} detail="Seller orders arrive in a later phase." />
-                    <DashboardCard icon="fa-store" label="Store status" value={dashboard.store?.status || "Not available"} detail={dashboard.store?.city || "Store profile coming soon."} />
+                    <DashboardCard icon="fa-store" label="Store status" value={dashboard.store?.status || "Not available"} detail={dashboard.store?.city || "Store profile"} />
                     <DashboardCard icon="fa-id-card" label="Seller ID" value={dashboard.seller.id} detail={`Registered ${new Date(dashboard.seller.createdAt).toLocaleDateString("en-NP")}`} />
                   </div>
                   <div className="dashboard-actions">
@@ -1157,9 +1170,30 @@ function SellerDashboard({ onClose }) {
                       >
                         Manage Store <small>{dashboard.store ? "View & edit profile" : "Store not created"}</small>
                       </button>
-                      <button disabled>Add Product <small>Next phase</small></button>
-                      <button disabled>Manage Inventory <small>Next phase</small></button>
-                      <button disabled>View Orders <small>Next phase</small></button>
+                      <button
+                        type="button"
+                        className="dashboard-action-active"
+                        onClick={() => {
+                          setView("products");
+                          setOpenAddProduct(false);
+                        }}
+                        disabled={!dashboard.store}
+                      >
+                        Manage Products <small>{dashboard.store ? "View & edit products" : "Store not created"}</small>
+                      </button>
+                      <button
+                        type="button"
+                        className="dashboard-action-active"
+                        onClick={() => {
+                          setView("products");
+                          setOpenAddProduct(true);
+                        }}
+                        disabled={!dashboard.store}
+                      >
+                        Add Product <small>{dashboard.store ? "List a new item" : "Store not created"}</small>
+                      </button>
+                      <button disabled>Manage Inventory <small>Phase 2.7</small></button>
+                      <button disabled>View Orders <small>Phase 2.8</small></button>
                     </div>
                   </div>
                 </>
@@ -1471,6 +1505,632 @@ function StoreProfile({ storeId, initialStore, onBack, onUpdate }) {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+const PRODUCT_CATEGORIES = [
+  "Ethnic Wear",
+  "Western",
+  "Kids",
+  "Footwear",
+  "Jewellery",
+  "Bags",
+  "Beauty",
+  "Men",
+  "Women",
+  "Accessories",
+  "Home & Living"
+];
+
+const GRADIENT_OPTIONS = [
+  { value: "rose", label: "Rose (Warm Pink)" },
+  { value: "sky", label: "Sky (Fresh Blue)" },
+  { value: "lilac", label: "Lilac (Soft Purple)" },
+  { value: "sun", label: "Sun (Warm Amber)" },
+  { value: "mint", label: "Mint (Sage Green)" },
+  { value: "pink", label: "Pink (Coral Blossom)" },
+  { value: "aqua", label: "Aqua (Teal Wave)" },
+  { value: "indigo", label: "Indigo (Deep Blue)" }
+];
+
+function SellerProducts({ sellerId, store, onBack, onProductCountChange, openAddDirectly, onCloseAddDirectly }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [togglingId, setTogglingId] = useState(null);
+
+  useEffect(() => {
+    if (openAddDirectly) {
+      setIsCreating(true);
+      if (onCloseAddDirectly) onCloseAddDirectly();
+    }
+  }, [openAddDirectly, onCloseAddDirectly]);
+
+  const loadProducts = useCallback(async () => {
+    if (!store?.id) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`${API}/stores/${encodeURIComponent(store.id)}/products`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to load products.");
+      const items = Array.isArray(data.products) ? data.products : [];
+      setProducts(items);
+      if (onProductCountChange) onProductCountChange(items.length);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [store?.id, onProductCountChange]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  const handleToggleStatus = async (product) => {
+    const newStatus = product.status === "active" ? "inactive" : "active";
+    setTogglingId(product.id);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch(`${API}/products/${encodeURIComponent(product.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update product status.");
+
+      setProducts((current) =>
+        current.map((item) => (item.id === product.id ? data.product : item))
+      );
+      setSuccess(`Product "${product.name}" is now ${newStatus}.`);
+      setTimeout(() => setSuccess(""), 4000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleProductSaved = (savedProduct, isNew) => {
+    if (isNew) {
+      setProducts((current) => {
+        const next = [savedProduct, ...current];
+        if (onProductCountChange) onProductCountChange(next.length);
+        return next;
+      });
+      setSuccess(`Product "${savedProduct.name}" created successfully.`);
+    } else {
+      setProducts((current) =>
+        current.map((item) => (item.id === savedProduct.id ? savedProduct : item))
+      );
+      setSuccess(`Product "${savedProduct.name}" updated successfully.`);
+    }
+    setEditingProduct(null);
+    setIsCreating(false);
+    setTimeout(() => setSuccess(""), 4000);
+  };
+
+  const filteredProducts = products.filter((p) => {
+    if (filterStatus !== "all" && p.status !== filterStatus) return false;
+    if (filterCategory !== "all" && p.category !== filterCategory) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = p.name?.toLowerCase().includes(q);
+      const matchBrand = p.brand?.toLowerCase().includes(q);
+      const matchCat = p.category?.toLowerCase().includes(q);
+      const matchKeywords = Array.isArray(p.keywords) && p.keywords.some((k) => k.toLowerCase().includes(q));
+      if (!matchName && !matchBrand && !matchCat && !matchKeywords) return false;
+    }
+    return true;
+  });
+
+  const totalCount = products.length;
+  const activeCount = products.filter((p) => p.status === "active").length;
+  const inactiveCount = products.filter((p) => p.status === "inactive").length;
+
+  return (
+    <div className="seller-products">
+      <div className="seller-products-header">
+        <div className="seller-products-title-wrap">
+          <button type="button" className="store-profile-back" onClick={onBack}>
+            <i className="fa fa-arrow-left" /> Back to Dashboard
+          </button>
+          <div>
+            <h3>Manage Products</h3>
+            <small style={{ color: "var(--gray-mid)" }}>{store?.name || "Store"}</small>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="checkout-btn"
+          style={{ width: "auto", padding: "0 20px" }}
+          onClick={() => {
+            setEditingProduct(null);
+            setIsCreating(true);
+          }}
+        >
+          <i className="fa fa-plus" /> Add Product
+        </button>
+      </div>
+
+      {success && (
+        <div className="store-profile-success" role="status">
+          <i className="fa fa-circle-check" />
+          <span>{success}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="store-profile-error" role="alert">
+          <i className="fa fa-circle-exclamation" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Stats Bar */}
+      <div className="seller-stats-bar">
+        <div className="seller-stat-chip">
+          <span>Total Products</span>
+          <strong>{totalCount}</strong>
+        </div>
+        <div className="seller-stat-chip">
+          <span>Active (Public)</span>
+          <strong style={{ color: "#2e7d32" }}>{activeCount}</strong>
+        </div>
+        <div className="seller-stat-chip">
+          <span>Inactive (Hidden)</span>
+          <strong style={{ color: "#b42318" }}>{inactiveCount}</strong>
+        </div>
+      </div>
+
+      {/* Search & Filter Controls */}
+      <div className="seller-filter-bar">
+        <div className="seller-search-box">
+          <i className="fa fa-magnifying-glass" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name, brand, category..."
+          />
+        </div>
+        <div className="seller-filter-selects">
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <option value="all">All Statuses ({totalCount})</option>
+            <option value="active">Active Only ({activeCount})</option>
+            <option value="inactive">Inactive Only ({inactiveCount})</option>
+          </select>
+          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+            <option value="all">All Categories</option>
+            {PRODUCT_CATEGORIES.map((cat) => (
+              <option value={cat} key={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Product List */}
+      {loading ? (
+        <div className="dashboard-state">
+          <i className="fa fa-spinner fa-spin" />
+          <span>Loading products...</span>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="dashboard-state">
+          <i className="fa fa-box-open" />
+          <strong>No products listed yet</strong>
+          <span>Start selling by adding your first handcrafted or curated product.</span>
+          <button
+            type="button"
+            className="checkout-btn"
+            style={{ width: "auto", marginTop: 12, padding: "0 22px" }}
+            onClick={() => {
+              setEditingProduct(null);
+              setIsCreating(true);
+            }}
+          >
+            <i className="fa fa-plus" /> Add First Product
+          </button>
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="dashboard-state">
+          <i className="fa fa-filter" />
+          <strong>No matching products found</strong>
+          <span>Try adjusting your search terms or filter selections.</span>
+          <button
+            type="button"
+            className="store-profile-back"
+            style={{ marginTop: 8 }}
+            onClick={() => {
+              setSearchQuery("");
+              setFilterStatus("all");
+              setFilterCategory("all");
+            }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      ) : (
+        <div className="seller-products-grid">
+          {filteredProducts.map((product) => {
+            const isToggling = togglingId === product.id;
+            return (
+              <div
+                key={product.id}
+                className={`seller-product-card ${product.status === "inactive" ? "is-inactive" : ""}`}
+              >
+                <div className={`seller-product-visual gradient-${product.gradient || "rose"}`}>
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} />
+                  ) : (
+                    <span className="seller-product-emoji">{product.emoji || "🛍️"}</span>
+                  )}
+                  {product.badge && (
+                    <span className={`product-badge badge-${product.badgeType || "new"}`}>
+                      {product.badge}
+                    </span>
+                  )}
+                  <span className={`product-status-tag ${product.status}`}>
+                    {product.status === "active" ? "Active" : "Inactive"}
+                  </span>
+                </div>
+
+                <div className="seller-product-body">
+                  <div className="seller-product-meta">
+                    <span className="seller-product-category">{product.category}</span>
+                    {product.brand && <span className="seller-product-brand">{product.brand}</span>}
+                  </div>
+                  <h4 className="seller-product-name">{product.name}</h4>
+                  {product.description && (
+                    <p className="seller-product-desc">{product.description}</p>
+                  )}
+                  <div className="seller-product-pricing">
+                    <strong className="seller-product-price">Rs. {product.price.toLocaleString("en-NP")}</strong>
+                    {product.was && (
+                      <span className="seller-product-was">Rs. {product.was.toLocaleString("en-NP")}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="seller-product-actions">
+                  <button
+                    type="button"
+                    className="seller-action-btn edit-btn"
+                    onClick={() => {
+                      setIsCreating(false);
+                      setEditingProduct(product);
+                    }}
+                    aria-label={`Edit ${product.name}`}
+                  >
+                    <i className="fa fa-pen-to-square" /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    className={`seller-action-btn toggle-btn ${product.status === "active" ? "deactivate" : "activate"}`}
+                    onClick={() => handleToggleStatus(product)}
+                    disabled={isToggling}
+                    aria-label={`${product.status === "active" ? "Deactivate" : "Activate"} ${product.name}`}
+                  >
+                    <i className={`fa ${isToggling ? "fa-spinner fa-spin" : product.status === "active" ? "fa-eye-slash" : "fa-eye"}`} />
+                    {product.status === "active" ? "Deactivate" : "Activate"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add / Edit Product Modal */}
+      {(isCreating || editingProduct) && (
+        <ProductFormModal
+          product={editingProduct}
+          storeId={store?.id}
+          sellerId={sellerId}
+          onClose={() => {
+            setIsCreating(false);
+            setEditingProduct(null);
+          }}
+          onSaved={handleProductSaved}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProductFormModal({ product, storeId, sellerId, onClose, onSaved }) {
+  const isEditing = Boolean(product && product.id);
+  const [form, setForm] = useState({
+    name: product?.name || "",
+    category: product?.category || "Ethnic Wear",
+    price: product?.price !== undefined ? String(product.price) : "",
+    was: product?.was !== undefined && product?.was !== null ? String(product.was) : "",
+    brand: product?.brand || "",
+    description: product?.description || "",
+    status: product?.status || "active",
+    gradient: product?.gradient || "rose",
+    badge: product?.badge || "",
+    badgeType: product?.badgeType || "new",
+    image: product?.image || "",
+    keywords: Array.isArray(product?.keywords) ? product.keywords.join(", ") : (product?.keywords || "")
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    // Client-side validation
+    const trimmedName = form.name.trim();
+    if (!trimmedName || trimmedName.length < 2 || trimmedName.length > 120) {
+      setError("Product name must be between 2 and 120 characters.");
+      return;
+    }
+
+    const priceNum = Number(form.price);
+    if (isNaN(priceNum) || priceNum <= 0 || priceNum > 1000000) {
+      setError("Please enter a valid price between Rs. 1 and Rs. 1,000,000.");
+      return;
+    }
+
+    let wasNum = undefined;
+    if (form.was.trim()) {
+      wasNum = Number(form.was);
+      if (isNaN(wasNum) || wasNum < priceNum) {
+        setError("Original price (was) must be greater than or equal to current price.");
+        return;
+      }
+    }
+
+    if (!form.category.trim()) {
+      setError("Please select a product category.");
+      return;
+    }
+
+    const payload = {
+      name: trimmedName,
+      category: form.category.trim(),
+      price: Math.round(priceNum),
+      was: wasNum !== undefined ? Math.round(wasNum) : (isEditing ? null : undefined),
+      brand: form.brand.trim() || (isEditing ? null : undefined),
+      description: form.description.trim() || undefined,
+      status: form.status,
+      gradient: form.gradient,
+      badge: form.badge.trim() || (isEditing ? null : undefined),
+      badgeType: form.badge.trim() ? form.badgeType : (isEditing ? null : undefined),
+      image: form.image.trim() || (isEditing ? null : undefined),
+      keywords: form.keywords.trim() ? form.keywords.split(",").map((k) => k.trim()).filter(Boolean) : []
+    };
+
+    setSaving(true);
+    try {
+      const url = isEditing
+        ? `${API}/products/${encodeURIComponent(product.id)}`
+        : `${API}/stores/${encodeURIComponent(storeId)}/products`;
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || (Array.isArray(data.errors) ? data.errors.join("; ") : "Failed to save product."));
+      }
+
+      onSaved(data.product, !isEditing);
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="product-form-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-modal-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="modal-close" onClick={onClose} aria-label="Close form">
+          <i className="fa fa-xmark" />
+        </button>
+
+        <p className="eyebrow">{isEditing ? "EDIT PRODUCT" : "NEW PRODUCT"}</p>
+        <h2 id="product-modal-title">
+          {isEditing ? `Edit "${product.name}"` : "List New Product"}
+        </h2>
+        <p className="product-form-intro">
+          {isEditing
+            ? "Update product details, pricing, or catalog visibility."
+            : "Add a new handcrafted or artisanal product to your store."}
+        </p>
+
+        {error && (
+          <div className="store-profile-error" role="alert" style={{ marginBottom: 16 }}>
+            <i className="fa fa-circle-exclamation" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="product-form">
+          <div className="seller-fields">
+            <label>
+              Product Name <span style={{ color: "var(--crimson)" }}>*</span>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                required
+                minLength={2}
+                maxLength={120}
+                placeholder="e.g. Pure Dhaka Topi (Bhadgaunle)"
+              />
+            </label>
+
+            <label>
+              Category <span style={{ color: "var(--crimson)" }}>*</span>
+              <select
+                value={form.category}
+                onChange={(e) => updateField("category", e.target.value)}
+                required
+              >
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <option value={cat} key={cat}>{cat}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Selling Price (Rs.) <span style={{ color: "var(--crimson)" }}>*</span>
+              <input
+                type="number"
+                value={form.price}
+                onChange={(e) => updateField("price", e.target.value)}
+                required
+                min={1}
+                max={1000000}
+                placeholder="e.g. 1850"
+              />
+            </label>
+
+            <label>
+              Original Price (Was) <span className="optional">(optional strikethrough)</span>
+              <input
+                type="number"
+                value={form.was}
+                onChange={(e) => updateField("was", e.target.value)}
+                min={1}
+                max={1000000}
+                placeholder="e.g. 2400"
+              />
+            </label>
+
+            <label>
+              Brand / Artisan <span className="optional">(optional)</span>
+              <input
+                type="text"
+                value={form.brand}
+                onChange={(e) => updateField("brand", e.target.value)}
+                maxLength={60}
+                placeholder="e.g. Bhaktapur Handloom"
+              />
+            </label>
+
+            <label>
+              Visibility Status
+              <select
+                value={form.status}
+                onChange={(e) => updateField("status", e.target.value)}
+              >
+                <option value="active">Active (Visible in Store)</option>
+                <option value="inactive">Inactive (Hidden Draft)</option>
+              </select>
+            </label>
+
+            <label>
+              Card Color Accent (Theme)
+              <select
+                value={form.gradient}
+                onChange={(e) => updateField("gradient", e.target.value)}
+              >
+                {GRADIENT_OPTIONS.map((opt) => (
+                  <option value={opt.value} key={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Image URL <span className="optional">(optional)</span>
+              <input
+                type="url"
+                value={form.image}
+                onChange={(e) => updateField("image", e.target.value)}
+                placeholder="e.g. https://images.unsplash.com/..."
+              />
+            </label>
+
+            <label>
+              Badge Label <span className="optional">(optional)</span>
+              <input
+                type="text"
+                value={form.badge}
+                onChange={(e) => updateField("badge", e.target.value)}
+                maxLength={30}
+                placeholder="e.g. Handmade, Hot, 20% Off"
+              />
+            </label>
+
+            <label>
+              Badge Color Style
+              <select
+                value={form.badgeType}
+                onChange={(e) => updateField("badgeType", e.target.value)}
+                disabled={!form.badge.trim()}
+              >
+                <option value="new">Green (New / Fresh)</option>
+                <option value="sale">Red (Sale / Discount)</option>
+                <option value="hot">Orange (Hot / Trending)</option>
+                <option value="best">Gold (Best Seller)</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Keywords / Search Tags <span className="optional">(comma separated)</span>
+            <input
+              type="text"
+              value={form.keywords}
+              onChange={(e) => updateField("keywords", e.target.value)}
+              placeholder="e.g. dhaka, topi, traditional, handloom, bhaktapur"
+            />
+          </label>
+
+          <label>
+            Product Description <span className="optional">(optional)</span>
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => updateField("description", e.target.value)}
+              maxLength={1000}
+              placeholder="Describe material, weave, authenticity, sizing guidelines, or craft origin..."
+            />
+          </label>
+
+          <div className="store-profile-actions">
+            <button type="button" className="store-profile-back" onClick={onClose}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="checkout-btn"
+              style={{ width: "auto", minWidth: "160px", padding: "0 24px" }}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : isEditing ? "Update Product" : "Create Product"}{" "}
+              <i className={`fa ${saving ? "fa-spinner fa-spin" : isEditing ? "fa-check" : "fa-plus"}`} />
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
