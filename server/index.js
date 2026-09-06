@@ -1002,12 +1002,93 @@ app.patch('/api/sellers/:sellerId/orders/:orderId/status', async (req, res, next
     res.json({ order: updatedSellerOrder });
   } catch (error) { next(error); }
 });
+
+export function sanitizeStoreCoordinate(val, type = 'lat') {
+  if (val === null || val === undefined) {
+    return null;
+  }
+  if (typeof val === 'boolean' || typeof val === 'object' || Array.isArray(val)) {
+    return null;
+  }
+  if (typeof val === 'string' && val.trim() === '') {
+    return null;
+  }
+  const num = Number(val);
+  if (!Number.isFinite(num) || isNaN(num)) {
+    return null;
+  }
+  if (type === 'lat') {
+    return num >= -90 && num <= 90 ? num : null;
+  }
+  if (type === 'lng' || type === 'lon') {
+    return num >= -180 && num <= 180 ? num : null;
+  }
+  return null;
+}
+
+export function sanitizeStoreCoordinates(store) {
+  if (!store || typeof store !== 'object') {
+    return { latitude: null, longitude: null };
+  }
+
+  let latitude = sanitizeStoreCoordinate(store.latitude, 'lat');
+  let longitude = sanitizeStoreCoordinate(store.longitude, 'lng');
+
+  // Both-or-none rule: if either coordinate is invalid or missing, both must be null
+  if (latitude === null || longitude === null) {
+    latitude = null;
+    longitude = null;
+  }
+
+  return { latitude, longitude };
+}
+
+export function sanitizeLocationValue(val) {
+  if (val === null || val === undefined) {
+    return '';
+  }
+  if (typeof val !== 'string') {
+    return '';
+  }
+  const trimmed = val.trim();
+  return trimmed === '' ? '' : trimmed;
+}
+
+export function normalizeStoreLocation(store) {
+  if (!store || typeof store !== 'object') {
+    return {
+      storeCountry: 'Nepal',
+      storeProvince: '',
+      storeDistrict: '',
+      storeCity: '',
+      storeLatitude: null,
+      storeLongitude: null
+    };
+  }
+
+  const storeCountry = (typeof store.country === 'string' && store.country.trim()) ? store.country.trim() : 'Nepal';
+  const storeProvince = sanitizeLocationValue(store.province);
+  const storeDistrict = sanitizeLocationValue(store.district);
+  const storeCity = sanitizeLocationValue(store.city);
+  const { latitude, longitude } = sanitizeStoreCoordinates(store);
+
+  return {
+    storeCountry,
+    storeProvince,
+    storeDistrict,
+    storeCity,
+    storeLatitude: latitude,
+    storeLongitude: longitude
+  };
+}
+
 function enrichMarketplaceProduct(prod, store, inv) {
   const defaultEmoji = categoryEmojiMap[prod.category] || 'ðŸ›ï¸';
+  const loc = normalizeStoreLocation(store);
   return {
     id: prod.id,
     name: prod.name,
-    brand: prod.brand || store.name,
+    brand: prod.brand || (store && typeof store.name === 'string' ? sanitizeLocationValue(store.name) : '') || 'VASTAAR Partner',
     category: prod.category,
     price: Number(prod.price),
     was: prod.was !== undefined && prod.was !== null ? Number(prod.was) : undefined,
@@ -1022,13 +1103,13 @@ function enrichMarketplaceProduct(prod, store, inv) {
     keywords: Array.isArray(prod.keywords) ? prod.keywords : [prod.category.toLowerCase(), prod.name.toLowerCase()],
     sellerId: prod.sellerId,
     storeId: prod.storeId,
-    storeName: store.name,
-    storeCountry: store.country || 'Nepal',
-    storeProvince: store.province || '',
-    storeCity: store.city,
-    storeDistrict: store.district || '',
-    storeLatitude: typeof store.latitude === 'number' && Number.isFinite(store.latitude) ? store.latitude : null,
-    storeLongitude: typeof store.longitude === 'number' && Number.isFinite(store.longitude) ? store.longitude : null,
+    storeName: (store && typeof store.name === 'string' ? sanitizeLocationValue(store.name) : '') || 'Store',
+    storeCountry: loc.storeCountry,
+    storeProvince: loc.storeProvince,
+    storeCity: loc.storeCity,
+    storeDistrict: loc.storeDistrict,
+    storeLatitude: loc.storeLatitude,
+    storeLongitude: loc.storeLongitude,
     isSellerProduct: true,
     inStock: inv ? inv.availableQuantity > 0 : true,
     availableQuantity: inv ? inv.availableQuantity : 999
@@ -1344,4 +1425,6 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ message: 'Something went wrong. Please try again.' });
 });
 
-app.listen(port, () => console.log(`VASTAAR API listening on http://localhost:${port}`));
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => console.log(`VASTAAR API listening on http://localhost:${port}`));
+}
