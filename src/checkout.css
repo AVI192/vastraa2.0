@@ -1204,6 +1204,46 @@
   font-size: 9px;
 }
 
+.prod-distance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #f0f7ff;
+  color: #1a6fb0;
+  border: 1px solid rgba(26, 111, 176, 0.25);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.2px;
+  margin-left: 2px;
+}
+
+.prod-distance-badge i {
+  font-size: 9px;
+}
+
+.catalog-location-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #475569;
+  margin: -10px 0 20px 0;
+  line-height: 1.4;
+}
+
+.catalog-location-note i {
+  color: #0284c7;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
 .cart-store-tag {
   display: block;
   font-size: 11px;
@@ -1261,6 +1301,28 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hdr-location-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  background: #e8f4fd;
+  color: #1a6fb0;
+  border: 1px solid rgba(26, 111, 176, 0.3);
+  border-radius: 50%;
+  margin-left: 5px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.hdr-location-badge i {
+  font-size: 8px;
+  color: #1a6fb0;
 }
 
 .location-modal {
@@ -1360,9 +1422,40 @@
   color: var(--crimson);
 }
 
-.location-active-info strong {
+.location-active-info strong,
+.location-active-name {
   font-size: 14px;
   color: var(--charcoal);
+  line-height: 1.35;
+}
+
+.location-coords-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0f766e;
+  margin-top: 3px;
+}
+
+.location-coords-status i {
+  font-size: 11px;
+  color: #0f766e;
+}
+
+.location-coords-status-muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--gray-dark);
+  margin-top: 3px;
+}
+
+.location-coords-status-muted i {
+  font-size: 10.5px;
+  color: var(--gray-mid);
 }
 
 .location-reset-btn {
@@ -1437,6 +1530,78 @@
   font-weight: 600;
 }
 
+/* --- Phase 3.4B Customer Coordinate Input UI --- */
+.location-coords-group {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--off-white);
+  border: 1px dashed #d9d5d2;
+  border-radius: 10px;
+}
+
+.location-coords-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.location-coords-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--charcoal);
+}
+
+.location-coords-hint {
+  font-size: 12px;
+  color: var(--gray-dark);
+}
+
+.location-coords-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fdeeee;
+  color: #b42318;
+  border: 1px solid #fac0c0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.location-coords-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+.location-coords-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--charcoal);
+}
+
+.location-coords-fields input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #d9d5d2;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--charcoal);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.location-coords-fields input:focus {
+  border-color: var(--crimson);
+  box-shadow: 0 0 0 3px rgba(166, 28, 60, 0.12);
+}
+
 .location-modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -1506,10 +1671,19 @@
     grid-template-columns: 1fr;
     gap: 14px;
   }
+  .location-coords-fields {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
   .hdr-location-caption {
     display: none;
   }
   .hdr-location-val {
     max-width: 80px;
+  }
+  .catalog-location-note {
+    font-size: 11px;
+    padding: 6px 10px;
+    margin: -6px 0 16px 0;
   }
 }

@@ -189,19 +189,49 @@ const NEPAL_LOCATION_DATA = {
   },
 };
 
-const DEFAULT_CUSTOMER_LOCATION = {
+export const DEFAULT_CUSTOMER_LOCATION = {
   country: "Nepal",
   province: "",
   district: "",
   city: "",
+  latitude: null,
+  longitude: null,
 };
 
-function sanitizeCustomerLocation(data) {
+export function isValidLatitude(lat) {
+  return typeof lat === "number" && Number.isFinite(lat) && lat >= -90 && lat <= 90;
+}
+
+export function isValidLongitude(lng) {
+  return typeof lng === "number" && Number.isFinite(lng) && lng >= -180 && lng <= 180;
+}
+
+export function sanitizeCoordinate(val, type = "lat") {
+  if (
+    val === null ||
+    val === undefined ||
+    val === "" ||
+    typeof val === "boolean" ||
+    typeof val === "object"
+  ) {
+    return null;
+  }
+  const num = Number(val);
+  if (!Number.isFinite(num)) return null;
+  if (type === "lat") return num >= -90 && num <= 90 ? num : null;
+  if (type === "lng" || type === "lon") return num >= -180 && num <= 180 ? num : null;
+  return null;
+}
+
+export function sanitizeCustomerLocation(data) {
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     return { ...DEFAULT_CUSTOMER_LOCATION };
   }
 
   const country = "Nepal";
+  const latitude = sanitizeCoordinate(data.latitude, "lat");
+  const longitude = sanitizeCoordinate(data.longitude, "lng");
+
   let province = "";
   if (typeof data.province === "string" && data.province.trim()) {
     const pTrim = data.province.trim();
@@ -214,7 +244,14 @@ function sanitizeCustomerLocation(data) {
   }
 
   if (!province) {
-    return { country, province: "", district: "", city: "" };
+    return {
+      country,
+      province: "",
+      district: "",
+      city: "",
+      latitude,
+      longitude,
+    };
   }
 
   const provinceData = NEPAL_LOCATION_DATA[province];
@@ -259,6 +296,8 @@ function sanitizeCustomerLocation(data) {
     province,
     district,
     city,
+    latitude,
+    longitude,
   };
 }
 
@@ -364,6 +403,92 @@ export function getLocationRelevance(product, customerLocation) {
   }
 
   return 0;
+}
+
+const EARTH_RADIUS_KM = 6371;
+
+function toRadians(degrees) {
+  return (degrees * Math.PI) / 180;
+}
+
+export function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+  const sLat1 = sanitizeCoordinate(lat1, "lat");
+  const sLon1 = sanitizeCoordinate(lon1, "lng");
+  const sLat2 = sanitizeCoordinate(lat2, "lat");
+  const sLon2 = sanitizeCoordinate(lon2, "lng");
+
+  if (sLat1 === null || sLon1 === null || sLat2 === null || sLon2 === null) {
+    return null;
+  }
+
+  if (sLat1 === sLat2 && sLon1 === sLon2) {
+    return 0;
+  }
+
+  const dLat = toRadians(sLat2 - sLat1);
+  const dLon = toRadians(sLon2 - sLon1);
+  const rLat1 = toRadians(sLat1);
+  const rLat2 = toRadians(sLat2);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = EARTH_RADIUS_KM * c;
+  return Number.isFinite(distance) ? distance : null;
+}
+
+export function formatDistance(distanceKm) {
+  if (
+    distanceKm === null ||
+    distanceKm === undefined ||
+    typeof distanceKm !== "number" ||
+    !Number.isFinite(distanceKm) ||
+    distanceKm < 0
+  ) {
+    return null;
+  }
+  if (distanceKm < 10) {
+    return `${distanceKm.toFixed(1)} km`;
+  }
+  return `${Math.round(distanceKm)} km`;
+}
+
+export function getStoreCoordinates(product) {
+  if (!product || typeof product !== "object") {
+    return { latitude: null, longitude: null };
+  }
+  const rawLat =
+    product.storeLatitude !== undefined ? product.storeLatitude : product.latitude;
+  const rawLng =
+    product.storeLongitude !== undefined ? product.storeLongitude : product.longitude;
+  return {
+    latitude: sanitizeCoordinate(rawLat, "lat"),
+    longitude: sanitizeCoordinate(rawLng, "lng"),
+  };
+}
+
+export function getProductDistance(product, customerLocation) {
+  if (!product || !customerLocation || typeof customerLocation !== "object") {
+    return null;
+  }
+  const custLat = sanitizeCoordinate(customerLocation.latitude, "lat");
+  const custLng = sanitizeCoordinate(customerLocation.longitude, "lng");
+  if (custLat === null || custLng === null) {
+    return null;
+  }
+
+  const storeCoords = getStoreCoordinates(product);
+  if (storeCoords.latitude === null || storeCoords.longitude === null) {
+    return null;
+  }
+
+  return calculateDistanceKm(
+    custLat,
+    custLng,
+    storeCoords.latitude,
+    storeCoords.longitude,
+  );
 }
 
 function App() {
@@ -572,6 +697,10 @@ function App() {
             loadProducts("", "");
           }}
         />
+        <div className="catalog-location-note">
+          <i className="fa fa-circle-info" aria-hidden="true" />
+          <span>Distances are approximate and shown when location coordinates are available.</span>
+        </div>
         {loading ? (
           <div className="state-box">Curating your edit...</div>
         ) : error ? (
@@ -710,6 +839,17 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
     location?.district || "",
   );
   const [selectedCity, setSelectedCity] = useState(location?.city || "");
+  const [latitude, setLatitude] = useState(
+    location?.latitude !== null && location?.latitude !== undefined
+      ? String(location.latitude)
+      : "",
+  );
+  const [longitude, setLongitude] = useState(
+    location?.longitude !== null && location?.longitude !== undefined
+      ? String(location.longitude)
+      : "",
+  );
+  const [coordError, setCoordError] = useState("");
 
   const availableDistricts = useMemo(() => {
     if (!selectedProvince || !NEPAL_LOCATION_DATA[selectedProvince]) {
@@ -791,11 +931,37 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setCoordError("");
+
+    const trimmedLat = latitude.trim();
+    const trimmedLng = longitude.trim();
+
+    if (trimmedLat !== "") {
+      const sanitizedLat = sanitizeCoordinate(trimmedLat, "lat");
+      if (sanitizedLat === null) {
+        setCoordError("Latitude must be a valid number between -90 and 90.");
+        return;
+      }
+    }
+
+    if (trimmedLng !== "") {
+      const sanitizedLng = sanitizeCoordinate(trimmedLng, "lng");
+      if (sanitizedLng === null) {
+        setCoordError("Longitude must be a valid number between -180 and 180.");
+        return;
+      }
+    }
+
+    const finalLat = trimmedLat === "" ? null : Number(trimmedLat);
+    const finalLng = trimmedLng === "" ? null : Number(trimmedLng);
+
     const sanitized = sanitizeCustomerLocation({
       country: "Nepal",
       province: selectedProvince,
       district: selectedDistrict,
       city: selectedCity,
+      latitude: finalLat,
+      longitude: finalLng,
     });
     onSave(sanitized);
   };
@@ -804,11 +970,20 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
     setSelectedProvince("");
     setSelectedDistrict("");
     setSelectedCity("");
+    setLatitude("");
+    setLongitude("");
+    setCoordError("");
     onClear();
   };
 
+  const hasCoords =
+    typeof location?.latitude === "number" &&
+    Number.isFinite(location.latitude) &&
+    typeof location?.longitude === "number" &&
+    Number.isFinite(location.longitude);
+
   const isLocationSet = Boolean(
-    location?.province || location?.city || location?.district,
+    location?.province || location?.city || location?.district || hasCoords,
   );
 
   return (
@@ -839,13 +1014,14 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
               className={
                 isLocationSet ? "fa fa-location-dot" : "fa fa-earth-asia"
               }
+              aria-hidden="true"
             />
           </div>
           <div className="location-active-info">
             <span className="location-active-label">
               {isLocationSet ? "Current Selected Location" : "Default Location"}
             </span>
-            <strong>
+            <strong className="location-active-name">
               {isLocationSet
                 ? [
                     location.city,
@@ -857,6 +1033,15 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
                     .join(", ")
                 : "Nepal (Countrywide)"}
             </strong>
+            {hasCoords ? (
+              <span className="location-coords-status">
+                <i className="fa fa-circle-check" aria-hidden="true" /> Distance information available
+              </span>
+            ) : (
+              <span className="location-coords-status-muted">
+                <i className="fa fa-circle-info" aria-hidden="true" /> Add coordinates below for approximate store distance
+              </span>
+            )}
           </div>
           {isLocationSet && (
             <button
@@ -864,8 +1049,9 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
               className="location-reset-btn"
               onClick={handleReset}
               title="Reset location to default Nepal"
+              aria-label="Reset location to default Nepal"
             >
-              <i className="fa fa-rotate-left" /> Reset
+              <i className="fa fa-rotate-left" aria-hidden="true" /> Reset
             </button>
           )}
         </div>
@@ -942,6 +1128,54 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
             </label>
           </div>
 
+          <div className="location-coords-group">
+            <div className="location-coords-heading">
+              <span className="location-coords-title">Coordinates (Optional)</span>
+              <span className="location-coords-hint">
+                Coordinates help show approximate distance to stores.
+              </span>
+            </div>
+            {coordError ? (
+              <div className="location-coords-error" role="alert">
+                <i className="fa fa-circle-exclamation" /> {coordError}
+              </div>
+            ) : null}
+            <div className="location-coords-fields">
+              <label>
+                Latitude (Optional)
+                <input
+                  type="number"
+                  step="any"
+                  min="-90"
+                  max="90"
+                  placeholder="e.g. 27.7172"
+                  value={latitude}
+                  onChange={(e) => {
+                    setLatitude(e.target.value);
+                    if (coordError) setCoordError("");
+                  }}
+                  aria-label="Latitude (Optional)"
+                />
+              </label>
+              <label>
+                Longitude (Optional)
+                <input
+                  type="number"
+                  step="any"
+                  min="-180"
+                  max="180"
+                  placeholder="e.g. 85.3240"
+                  value={longitude}
+                  onChange={(e) => {
+                    setLongitude(e.target.value);
+                    if (coordError) setCoordError("");
+                  }}
+                  aria-label="Longitude (Optional)"
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="location-modal-actions">
             <button
               type="button"
@@ -980,15 +1214,24 @@ function Header({
   customerLocation,
   openLocationModal,
 }) {
+  const hasCoords =
+    typeof customerLocation?.latitude === "number" &&
+    Number.isFinite(customerLocation.latitude) &&
+    typeof customerLocation?.longitude === "number" &&
+    Number.isFinite(customerLocation.longitude);
+
   const locationTooltip = customerLocation?.province
     ? [
         customerLocation.city,
         customerLocation.district ? `${customerLocation.district} District` : "",
         customerLocation.province,
         customerLocation.country,
+        hasCoords ? "(Distance available)" : "",
       ]
         .filter(Boolean)
         .join(", ")
+    : hasCoords
+    ? "Nepal (Distance available)"
     : "Select your delivery location in Nepal";
 
   const locationDisplay = customerLocation?.city
@@ -1009,15 +1252,26 @@ function Header({
         </a>
         <button
           type="button"
-          className="hdr-location-btn"
+          className={`hdr-location-btn ${hasCoords ? "has-coords" : ""}`}
           onClick={openLocationModal}
           title={locationTooltip}
           aria-label="Select delivery location in Nepal"
         >
-          <i className="fa fa-location-dot" />
+          <i className="fa fa-location-dot" aria-hidden="true" />
           <div className="hdr-location-info">
             <span className="hdr-location-caption">Deliver to</span>
-            <span className="hdr-location-val">{locationDisplay}</span>
+            <span className="hdr-location-val">
+              {locationDisplay}
+              {hasCoords && (
+                <span
+                  className="hdr-location-badge"
+                  title="Approximate distance estimates active"
+                  aria-label="Distance active"
+                >
+                  <i className="fa fa-route" aria-hidden="true" />
+                </span>
+              )}
+            </span>
           </div>
         </button>
         <div className="search-wrap">
@@ -1280,6 +1534,14 @@ function ProductCard({ product, wished, onWish, onAdd, customerLocation }) {
     () => getLocationRelevance(product, customerLocation),
     [product, customerLocation],
   );
+  const productDistance = useMemo(
+    () => getProductDistance(product, customerLocation),
+    [product, customerLocation],
+  );
+  const formattedDistance = useMemo(
+    () => (productDistance !== null ? formatDistance(productDistance) : null),
+    [productDistance],
+  );
   return (
     <article className="prod-card">
       <div className={`prod-img gradient-${product.gradient || "rose"}`}>
@@ -1321,7 +1583,16 @@ function ProductCard({ product, wished, onWish, onAdd, customerLocation }) {
               {product.storeCity ? ` • ${product.storeCity}` : ""}
               {locationScore > 0 ? (
                 <span className="prod-local-badge" title="Local seller match">
-                  <i className="fa fa-location-dot" /> Local Pick
+                  <i className="fa fa-location-dot" aria-hidden="true" /> Local Pick
+                </span>
+              ) : null}
+              {formattedDistance ? (
+                <span
+                  className="prod-distance-badge"
+                  title={`Approx. ${formattedDistance} from your location (straight-line)`}
+                  aria-label={`Approximate distance: ${formattedDistance} away`}
+                >
+                  <i className="fa fa-route" aria-hidden="true" /> {formattedDistance} away
                 </span>
               ) : null}
             </span>

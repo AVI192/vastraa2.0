@@ -1027,6 +1027,8 @@ function enrichMarketplaceProduct(prod, store, inv) {
     storeProvince: store.province || '',
     storeCity: store.city,
     storeDistrict: store.district || '',
+    storeLatitude: typeof store.latitude === 'number' && Number.isFinite(store.latitude) ? store.latitude : null,
+    storeLongitude: typeof store.longitude === 'number' && Number.isFinite(store.longitude) ? store.longitude : null,
     isSellerProduct: true,
     inStock: inv ? inv.availableQuantity > 0 : true,
     availableQuantity: inv ? inv.availableQuantity : 999
