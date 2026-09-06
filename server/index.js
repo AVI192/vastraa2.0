@@ -1023,6 +1023,8 @@ function enrichMarketplaceProduct(prod, store, inv) {
     sellerId: prod.sellerId,
     storeId: prod.storeId,
     storeName: store.name,
+    storeCountry: store.country || 'Nepal',
+    storeProvince: store.province || '',
     storeCity: store.city,
     storeDistrict: store.district || '',
     isSellerProduct: true,

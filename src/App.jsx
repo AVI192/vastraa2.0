@@ -262,6 +262,110 @@ function sanitizeCustomerLocation(data) {
   };
 }
 
+export function getStoreLocationInfo(product) {
+  if (!product || typeof product !== "object") {
+    return { province: "", district: "", city: "" };
+  }
+
+  let province =
+    typeof product.storeProvince === "string" ? product.storeProvince.trim() : "";
+  let district =
+    typeof product.storeDistrict === "string" ? product.storeDistrict.trim() : "";
+  let city =
+    typeof product.storeCity === "string" ? product.storeCity.trim() : "";
+
+  // If district is provided but province is missing, infer province from NEPAL_LOCATION_DATA
+  if (!province && district) {
+    for (const [pName, pData] of Object.entries(NEPAL_LOCATION_DATA)) {
+      const dMatch = Object.keys(pData.districts).find(
+        (d) => d.toLowerCase() === district.toLowerCase(),
+      );
+      if (dMatch) {
+        province = pName;
+        district = dMatch;
+        break;
+      }
+    }
+  }
+
+  // If city is provided but province or district is missing, infer from NEPAL_LOCATION_DATA
+  if (city && (!province || !district)) {
+    for (const [pName, pData] of Object.entries(NEPAL_LOCATION_DATA)) {
+      if (province && pName.toLowerCase() !== province.toLowerCase()) continue;
+      for (const [dName, cities] of Object.entries(pData.districts)) {
+        if (district && dName.toLowerCase() !== district.toLowerCase()) continue;
+        const cMatch = cities.find(
+          (c) => c.toLowerCase() === city.toLowerCase(),
+        );
+        if (cMatch) {
+          if (!province) province = pName;
+          if (!district) district = dName;
+          city = cMatch;
+          break;
+        }
+      }
+      if (province && district) break;
+    }
+  }
+
+  return { province, district, city };
+}
+
+export function getLocationRelevance(product, customerLocation) {
+  if (!product || !customerLocation || typeof customerLocation !== "object") {
+    return 0;
+  }
+
+  const custProv =
+    typeof customerLocation.province === "string"
+      ? customerLocation.province.trim().toLowerCase()
+      : "";
+  const custDist =
+    typeof customerLocation.district === "string"
+      ? customerLocation.district.trim().toLowerCase()
+      : "";
+  const custCity =
+    typeof customerLocation.city === "string"
+      ? customerLocation.city.trim().toLowerCase()
+      : "";
+
+  // If customer has not selected any province, all products have neutral relevance (0)
+  if (!custProv) {
+    return 0;
+  }
+
+  const storeLoc = getStoreLocationInfo(product);
+  const prodProv = storeLoc.province.trim().toLowerCase();
+  const prodDist = storeLoc.district.trim().toLowerCase();
+  const prodCity = storeLoc.city.trim().toLowerCase();
+
+  // If the product has no store location at all, it has neutral relevance (0)
+  if (!prodProv && !prodDist && !prodCity) {
+    return 0;
+  }
+
+  // 1. City Match (Score 3) — if customer specified city and it matches store city in same province/district
+  if (custCity && prodCity && custCity === prodCity) {
+    if (!custProv || !prodProv || custProv === prodProv) {
+      return 3;
+    }
+  }
+
+  // 2. District Match (Score 2) — if customer specified district and it matches store district in same province
+  if (custDist && prodDist && custDist === prodDist) {
+    if (!custProv || !prodProv || custProv === prodProv) {
+      return 2;
+    }
+  }
+
+  // 3. Province Match (Score 1) — if province matches
+  if (custProv && prodProv && custProv === prodProv) {
+    return 1;
+  }
+
+  return 0;
+}
+
 function App() {
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState("");
@@ -376,7 +480,14 @@ function App() {
     minutes: Math.floor((saleTime % 3600000) / 60000),
     seconds: Math.floor((saleTime % 60000) / 1000),
   };
-  const visibleProducts = useMemo(() => products, [products]);
+  const visibleProducts = useMemo(() => {
+    if (!customerLocation?.province) return products;
+    return [...products].sort((a, b) => {
+      const scoreA = getLocationRelevance(a, customerLocation);
+      const scoreB = getLocationRelevance(b, customerLocation);
+      return scoreB - scoreA;
+    });
+  }, [products, customerLocation]);
 
   const search = () => {
     loadProducts(query, activeCategory);
@@ -446,7 +557,15 @@ function App() {
         <SectionHeading
           title="Featured"
           accent="Products"
-          subtitle="Handpicked styles for you"
+          subtitle={
+            customerLocation?.province
+              ? `Local picks for ${
+                  customerLocation.city ||
+                  customerLocation.district ||
+                  customerLocation.province
+                } • Handpicked styles across Nepal`
+              : "Handpicked styles for you"
+          }
           action="View All"
           onAction={() => {
             setActiveCategory("");
@@ -468,6 +587,7 @@ function App() {
                 wished={wishlist.includes(product.id)}
                 onWish={() => toggleWishlist(product.id)}
                 onAdd={() => addToCart(product)}
+                customerLocation={customerLocation}
               />
             ))}
           </div>
@@ -1153,9 +1273,13 @@ function BannerStrip({ onSelect }) {
     </div>
   );
 }
-function ProductCard({ product, wished, onWish, onAdd }) {
+function ProductCard({ product, wished, onWish, onAdd, customerLocation }) {
   const hasDiscount = product.was && Number(product.was) > Number(product.price);
   const discount = hasDiscount ? Math.round((1 - product.price / product.was) * 100) : 0;
+  const locationScore = useMemo(
+    () => getLocationRelevance(product, customerLocation),
+    [product, customerLocation],
+  );
   return (
     <article className="prod-card">
       <div className={`prod-img gradient-${product.gradient || "rose"}`}>
@@ -1195,6 +1319,11 @@ function ProductCard({ product, wished, onWish, onAdd }) {
             <span className="prod-seller-tag">
               <i className="fa fa-store" /> {product.storeName}
               {product.storeCity ? ` • ${product.storeCity}` : ""}
+              {locationScore > 0 ? (
+                <span className="prod-local-badge" title="Local seller match">
+                  <i className="fa fa-location-dot" /> Local Pick
+                </span>
+              ) : null}
             </span>
           ) : (
             product.brand
