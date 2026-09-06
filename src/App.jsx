@@ -198,6 +198,8 @@ export const DEFAULT_CUSTOMER_LOCATION = {
   longitude: null,
 };
 
+export const CUSTOMER_LOCATION_STORAGE_KEY = "vastaar_customer_location";
+
 export function isValidLatitude(lat) {
   return typeof lat === "number" && Number.isFinite(lat) && lat >= -90 && lat <= 90;
 }
@@ -210,10 +212,12 @@ export function sanitizeCoordinate(val, type = "lat") {
   if (
     val === null ||
     val === undefined ||
-    val === "" ||
     typeof val === "boolean" ||
     typeof val === "object"
   ) {
+    return null;
+  }
+  if (typeof val === "string" && val.trim() === "") {
     return null;
   }
   const num = Number(val);
@@ -229,8 +233,14 @@ export function sanitizeCustomerLocation(data) {
   }
 
   const country = "Nepal";
-  const latitude = sanitizeCoordinate(data.latitude, "lat");
-  const longitude = sanitizeCoordinate(data.longitude, "lng");
+  let latitude = sanitizeCoordinate(data.latitude, "lat");
+  let longitude = sanitizeCoordinate(data.longitude, "lng");
+
+  // Partial coordinate protection: if one coordinate is missing or invalid, both must be null
+  if (latitude === null || longitude === null) {
+    latitude = null;
+    longitude = null;
+  }
 
   let province = "";
   if (typeof data.province === "string" && data.province.trim()) {
@@ -299,6 +309,42 @@ export function sanitizeCustomerLocation(data) {
     latitude,
     longitude,
   };
+}
+
+export function getStoredCustomerLocation() {
+  try {
+    const raw = localStorage.getItem(CUSTOMER_LOCATION_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_CUSTOMER_LOCATION };
+    const parsed = JSON.parse(raw);
+    return sanitizeCustomerLocation(parsed);
+  } catch (err) {
+    return { ...DEFAULT_CUSTOMER_LOCATION };
+  }
+}
+
+export function saveStoredCustomerLocation(location) {
+  const sanitized = sanitizeCustomerLocation(location);
+  try {
+    localStorage.setItem(
+      CUSTOMER_LOCATION_STORAGE_KEY,
+      JSON.stringify(sanitized),
+    );
+  } catch (err) {
+    // Gracefully handle restricted storage
+  }
+  return sanitized;
+}
+
+export function clearStoredCustomerLocation() {
+  try {
+    localStorage.setItem(
+      CUSTOMER_LOCATION_STORAGE_KEY,
+      JSON.stringify(DEFAULT_CUSTOMER_LOCATION),
+    );
+  } catch (err) {
+    // Gracefully handle restricted storage
+  }
+  return { ...DEFAULT_CUSTOMER_LOCATION };
 }
 
 export function getStoreLocationInfo(product) {
@@ -503,15 +549,9 @@ function App() {
     JSON.parse(localStorage.getItem("vastaar-wishlist") || "[]"),
   );
   const [customerLocationModal, setCustomerLocationModal] = useState(false);
-  const [customerLocation, setCustomerLocation] = useState(() => {
-    try {
-      const raw = localStorage.getItem("vastaar_customer_location");
-      if (!raw) return { ...DEFAULT_CUSTOMER_LOCATION };
-      return sanitizeCustomerLocation(JSON.parse(raw));
-    } catch (err) {
-      return { ...DEFAULT_CUSTOMER_LOCATION };
-    }
-  });
+  const [customerLocation, setCustomerLocation] = useState(() =>
+    getStoredCustomerLocation(),
+  );
   const [drawer, setDrawer] = useState(false);
   const [checkout, setCheckout] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -530,17 +570,18 @@ function App() {
     window.toastTimer = window.setTimeout(() => setToast(""), 2600);
   };
   const updateCustomerLocation = (nextLocation) => {
-    const sanitized = sanitizeCustomerLocation(nextLocation);
-    setCustomerLocation(sanitized);
-    const locationLabel = sanitized.city
-      ? `${sanitized.city}, ${sanitized.province}`
-      : sanitized.province
-      ? `${sanitized.province}, Nepal`
+    const saved = saveStoredCustomerLocation(nextLocation);
+    setCustomerLocation(saved);
+    const locationLabel = saved.city
+      ? `${saved.city}, ${saved.province}`
+      : saved.province
+      ? `${saved.province}, Nepal`
       : "Nepal";
     showToast(`Location updated to ${locationLabel}`);
   };
   const clearCustomerLocation = () => {
-    setCustomerLocation({ ...DEFAULT_CUSTOMER_LOCATION });
+    const reset = clearStoredCustomerLocation();
+    setCustomerLocation(reset);
     showToast("Location reset to Nepal");
   };
   const loadProducts = async (search = query, category = activeCategory) => {
@@ -935,6 +976,11 @@ function CustomerLocationModal({ location, onClose, onSave, onClear }) {
 
     const trimmedLat = latitude.trim();
     const trimmedLng = longitude.trim();
+
+    if ((trimmedLat !== "" && trimmedLng === "") || (trimmedLat === "" && trimmedLng !== "")) {
+      setCoordError("Please provide both latitude and longitude, or leave both empty.");
+      return;
+    }
 
     if (trimmedLat !== "") {
       const sanitizedLat = sanitizeCoordinate(trimmedLat, "lat");
